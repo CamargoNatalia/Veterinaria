@@ -34,6 +34,14 @@ namespace Veterinaria.Models
         public Cliente Cliente { get; set; } = null!;
 
 
+        // RELACIÓN CON ESPECIE
+
+        [Required]
+        public int IdEspecie { get; set; }
+
+        [ForeignKey(nameof(IdEspecie))]
+        public Especie Especie { get; set; } = null!;
+
 
         // RELACIÓN CON RAZA
 
@@ -46,14 +54,11 @@ namespace Veterinaria.Models
 
         // RELACIÓN CON TURNOS
 
-
         public ICollection<Turno> Turnos { get; set; }
             = new List<Turno>();
 
 
-
         // RELACIÓN CON CONSULTAS
-
 
         public ICollection<Consulta> Consultas { get; set; }
             = new List<Consulta>();
