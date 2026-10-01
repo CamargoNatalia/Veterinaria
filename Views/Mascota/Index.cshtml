@@ -1,0 +1,62 @@
+@model IEnumerable<Veterinaria.Models.Mascota>
+
+@{
+    ViewData["Title"] = "Mascotas";
+}
+
+<h1>Mascotas</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Nueva mascota</a>
+</p>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Especie</th>
+            <th>Raza</th>
+            <th>Dueño</th>
+            <th>Fecha de nacimiento</th>
+            <th>Sexo</th>
+            <th>Peso</th>
+            <th>Activo</th>
+            <th></th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @foreach (var mascota in Model)
+        {
+            <tr>
+                <td>@mascota.Nombre</td>
+                <td>@mascota.Especie.Nombre</td>
+                <td>@mascota.Raza.Nombre</td>
+                <td>
+                    @mascota.Cliente.Nombre @mascota.Cliente.Apellido
+                </td>
+                <td>
+                    @(mascota.FechaNacimiento?.ToString("dd/MM/yyyy") ?? "-")
+                </td>
+                <td>@(mascota.Sexo ?? "-")</td>
+                <td>@(mascota.Peso?.ToString("0.##") ?? "-")</td>
+                <td>
+                    @(mascota.Activo ? "Sí" : "No")
+                </td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@mascota.IdMascota" class="btn btn-info btn-sm">
+                        Ver
+                    </a>
+
+                    <a asp-action="Edit" asp-route-id="@mascota.IdMascota" class="btn btn-warning btn-sm">
+                        Editar
+                    </a>
+
+                    <a asp-action="Delete" asp-route-id="@mascota.IdMascota" class="btn btn-danger btn-sm">
+                        Eliminar
+                    </a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

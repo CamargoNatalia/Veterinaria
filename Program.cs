@@ -21,6 +21,7 @@ builder.Services.AddDbContext<VeterinariaContext>(options =>
 
 
 builder.Services.AddScoped<IRepositorioCliente, RepositorioCliente>();
+builder.Services.AddScoped<IRepositorioMascota, RepositorioMascota>();
 
 var app = builder.Build();
 

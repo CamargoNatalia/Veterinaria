@@ -1,0 +1,100 @@
+@model Veterinaria.Models.Mascota
+
+@{
+    ViewData["Title"] = "Nueva Mascota";
+}
+
+<h1>Nueva Mascota</h1>
+
+<hr />
+
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="Create" method="post">
+
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="mb-3">
+                <label asp-for="Nombre" class="form-label"></label>
+                <input asp-for="Nombre" class="form-control" />
+                <span asp-validation-for="Nombre" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="IdCliente" class="form-label">Cliente</label>
+                <select asp-for="IdCliente" asp-items="ViewBag.Clientes" class="form-select">
+                    <option value="">-- Seleccione un cliente --</option>
+                </select>
+                <span asp-validation-for="IdCliente" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="IdEspecie" class="form-label">Especie</label>
+                <select asp-for="IdEspecie" asp-items="ViewBag.Especies" class="form-select">
+                    <option value="">-- Seleccione una especie --</option>
+                </select>
+                <span asp-validation-for="IdEspecie" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="IdRaza" class="form-label">Raza</label>
+                <select asp-for="IdRaza" asp-items="ViewBag.Razas" class="form-select">
+                    <option value="">-- Seleccione una raza --</option>
+                </select>
+                <span asp-validation-for="IdRaza" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="FechaNacimiento" class="form-label">
+                    Fecha de nacimiento
+                </label>
+                <input asp-for="FechaNacimiento" type="date" class="form-control" />
+                <span asp-validation-for="FechaNacimiento" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Sexo" class="form-label"></label>
+                <select asp-for="Sexo" class="form-select">
+                    <option value="">-- Seleccione --</option>
+                    <option value="Macho">Macho</option>
+                    <option value="Hembra">Hembra</option>
+                </select>
+                <span asp-validation-for="Sexo" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Peso" class="form-label"></label>
+                <input asp-for="Peso" type="number" step="0.01" class="form-control" />
+                <span asp-validation-for="Peso" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Observaciones" class="form-label"></label>
+                <textarea asp-for="Observaciones" class="form-control" rows="4"></textarea>
+                <span asp-validation-for="Observaciones" class="text-danger"></span>
+            </div>
+
+            <div class="form-check mb-3">
+                <input asp-for="Activo" class="form-check-input" />
+                <label asp-for="Activo" class="form-check-label">
+                    Mascota activa
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                Guardar
+            </button>
+
+            <a asp-action="Index" class="btn btn-secondary">
+                Volver
+            </a>
+
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

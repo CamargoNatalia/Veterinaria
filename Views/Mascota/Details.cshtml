@@ -1,0 +1,88 @@
+@model Veterinaria.Models.Mascota
+
+@{
+    ViewData["Title"] = "Detalles de la Mascota";
+}
+
+<h1>Detalles de la Mascota</h1>
+
+<hr />
+
+<div>
+    <dl class="row">
+
+        <dt class="col-sm-3">
+            Nombre
+        </dt>
+        <dd class="col-sm-9">
+            @Model.Nombre
+        </dd>
+
+        <dt class="col-sm-3">
+            Cliente
+        </dt>
+        <dd class="col-sm-9">
+            @Model.Cliente.Nombre @Model.Cliente.Apellido
+        </dd>
+
+        <dt class="col-sm-3">
+            Especie
+        </dt>
+        <dd class="col-sm-9">
+            @Model.Especie.Nombre
+        </dd>
+
+        <dt class="col-sm-3">
+            Raza
+        </dt>
+        <dd class="col-sm-9">
+            @Model.Raza.Nombre
+        </dd>
+
+        <dt class="col-sm-3">
+            Fecha de nacimiento
+        </dt>
+        <dd class="col-sm-9">
+            @(Model.FechaNacimiento?.ToString("dd/MM/yyyy") ?? "-")
+        </dd>
+
+        <dt class="col-sm-3">
+            Sexo
+        </dt>
+        <dd class="col-sm-9">
+            @(Model.Sexo ?? "-")
+        </dd>
+
+        <dt class="col-sm-3">
+            Peso
+        </dt>
+        <dd class="col-sm-9">
+            @(Model.Peso?.ToString("0.##") ?? "-")
+        </dd>
+
+        <dt class="col-sm-3">
+            Observaciones
+        </dt>
+        <dd class="col-sm-9">
+            @(Model.Observaciones ?? "-")
+        </dd>
+
+        <dt class="col-sm-3">
+            Activo
+        </dt>
+        <dd class="col-sm-9">
+            @(Model.Activo ? "Sí" : "No")
+        </dd>
+
+    </dl>
+</div>
+
+<div>
+    <a asp-action="Edit" asp-route-id="@Model.IdMascota" class="btn btn-primary">
+        Editar
+    </a>
+
+    <a asp-action="Index" class="btn btn-secondary">
+        Volver
+    </a>
+</div>
