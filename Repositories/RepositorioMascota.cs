@@ -23,7 +23,7 @@ namespace Veterinaria.Repositories
                 .ToList();
         }
 
-        public Mascota ObtenerPorId(int id)
+        public Mascota? ObtenerPorId(int id)
         {
             return _context.Mascotas
                 .Include(m => m.Cliente)

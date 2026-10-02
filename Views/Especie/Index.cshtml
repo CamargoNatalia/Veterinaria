@@ -1,0 +1,46 @@
+@model IEnumerable<Veterinaria.Models.Especie>
+
+@{
+    ViewData["Title"] = "Especies";
+}
+
+<h1>Especies</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Nueva especie</a>
+</p>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Activo</th>
+            <th></th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @foreach (var especie in Model)
+        {
+            <tr>
+                <td>@especie.Nombre</td>
+                <td>
+                    @(especie.Activo ? "Sí" : "No")
+                </td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@especie.IdEspecie" class="btn btn-info btn-sm">
+                        Ver
+                    </a>
+
+                    <a asp-action="Edit" asp-route-id="@especie.IdEspecie" class="btn btn-warning btn-sm">
+                        Editar
+                    </a>
+
+                    <a asp-action="Delete" asp-route-id="@especie.IdEspecie" class="btn btn-danger btn-sm">
+                        Eliminar
+                    </a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

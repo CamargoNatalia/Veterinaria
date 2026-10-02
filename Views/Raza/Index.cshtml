@@ -1,0 +1,38 @@
+@model IEnumerable<Veterinaria.Models.Raza>
+
+@{
+    ViewData["Title"] = "Razas";
+}
+
+<h1>Razas</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Nueva Raza</a>
+</p>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Especie</th>
+            <th>Activo</th>
+            <th></th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @foreach (var raza in Model)
+        {
+            <tr>
+                <td>@raza.Nombre</td>
+                <td>@raza.Especie.Nombre</td>
+                <td>@raza.Activo</td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@raza.IdRaza">Detalles</a> |
+                    <a asp-action="Edit" asp-route-id="@raza.IdRaza">Editar</a> |
+                    <a asp-action="Delete" asp-route-id="@raza.IdRaza">Eliminar</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
