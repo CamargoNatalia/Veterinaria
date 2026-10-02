@@ -24,41 +24,26 @@ namespace Veterinaria.Models
 
         public bool Activo { get; set; } = true;
 
-
-        // RELACIÓN CON CLIENTE
-
         [Required]
         public int IdCliente { get; set; }
 
         [ForeignKey(nameof(IdCliente))]
-        public Cliente Cliente { get; set; } = null!;
-
-
-        // RELACIÓN CON ESPECIE
+        public Cliente? Cliente { get; set; }
 
         [Required]
         public int IdEspecie { get; set; }
 
         [ForeignKey(nameof(IdEspecie))]
-        public Especie Especie { get; set; } = null!;
-
-
-        // RELACIÓN CON RAZA
+        public Especie? Especie { get; set; }
 
         [Required]
         public int IdRaza { get; set; }
 
         [ForeignKey(nameof(IdRaza))]
-        public Raza Raza { get; set; } = null!;
-
-
-        // RELACIÓN CON TURNOS
+        public Raza? Raza { get; set; }
 
         public ICollection<Turno> Turnos { get; set; }
             = new List<Turno>();
-
-
-        // RELACIÓN CON CONSULTAS
 
         public ICollection<Consulta> Consultas { get; set; }
             = new List<Consulta>();

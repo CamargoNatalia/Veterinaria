@@ -18,7 +18,7 @@ namespace Veterinaria.Repositories
             return _context.Clientes.ToList();
         }
 
-        public Cliente ObtenerPorId(int id)
+        public Cliente? ObtenerPorId(int id)
         {
             return _context.Clientes.Find(id);
         }

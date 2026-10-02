@@ -22,7 +22,7 @@ namespace Veterinaria.Models
         public int IdEspecie { get; set; }
 
         [ForeignKey(nameof(IdEspecie))]
-        public Especie Especie { get; set; } = null!;
+        public Especie? Especie { get; set; } = null!;
 
 
         // RELACIÓN CON MASCOTAS

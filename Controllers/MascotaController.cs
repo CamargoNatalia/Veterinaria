@@ -9,21 +9,28 @@ namespace Veterinaria.Controllers
     public class MascotaController : Controller
     {
         private readonly IRepositorioMascota _repositorioMascota;
+        private readonly IRepositorioRaza _repositorioRaza;
         private readonly VeterinariaContext _context;
+
 
         public MascotaController(
             IRepositorioMascota repositorioMascota,
+            IRepositorioRaza repositorioRaza,
             VeterinariaContext context)
         {
             _repositorioMascota = repositorioMascota;
+            _repositorioRaza = repositorioRaza;
             _context = context;
         }
+
 
         public IActionResult Index()
         {
             var mascotas = _repositorioMascota.ObtenerTodos();
+
             return View(mascotas);
         }
+
 
         public IActionResult Details(int id)
         {
@@ -40,8 +47,11 @@ namespace Veterinaria.Controllers
         public IActionResult Create()
         {
             CargarListas();
+
             return View();
         }
+
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -50,11 +60,30 @@ namespace Veterinaria.Controllers
             if (ModelState.IsValid)
             {
                 _repositorioMascota.Crear(mascota);
+
                 return RedirectToAction(nameof(Index));
             }
 
             CargarListas(mascota);
+
             return View(mascota);
+        }
+
+
+
+        [HttpGet]
+        public IActionResult ObtenerRazasPorEspecie(int idEspecie)
+        {
+            var razas = _repositorioRaza
+                .ObtenerPorEspecie(idEspecie)
+                .Select(r => new
+                {
+                    idRaza = r.IdRaza,
+                    nombre = r.Nombre
+                })
+                .ToList();
+
+            return Json(razas);
         }
 
         public IActionResult Edit(int id)
@@ -67,8 +96,10 @@ namespace Veterinaria.Controllers
             }
 
             CargarListas(mascota);
+
             return View(mascota);
         }
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -82,12 +113,15 @@ namespace Veterinaria.Controllers
             if (ModelState.IsValid)
             {
                 _repositorioMascota.Editar(mascota);
+
                 return RedirectToAction(nameof(Index));
             }
 
             CargarListas(mascota);
+
             return View(mascota);
         }
+
 
         public IActionResult Delete(int id)
         {
@@ -106,28 +140,59 @@ namespace Veterinaria.Controllers
         public IActionResult DeleteConfirmed(int id)
         {
             _repositorioMascota.Eliminar(id);
+
             return RedirectToAction(nameof(Index));
         }
 
+
         private void CargarListas(Mascota? mascota = null)
         {
+
             ViewBag.Clientes = new SelectList(
-                _context.Clientes.Where(c => c.Activo),
+                _context.Clientes
+                    .Where(c => c.Activo)
+                    .Select(c => new
+                    {
+                        IdCliente = c.IdCliente,
+                        NombreCompleto = c.Nombre + " " + c.Apellido
+                    }),
                 "IdCliente",
-                "Nombre",
-                mascota?.IdCliente);
+                "NombreCompleto",
+                mascota?.IdCliente
+            );
+
+
 
             ViewBag.Especies = new SelectList(
-                _context.Especies.Where(e => e.Activo),
+                _context.Especies
+                    .Where(e => e.Activo),
                 "IdEspecie",
                 "Nombre",
-                mascota?.IdEspecie);
+                mascota?.IdEspecie
+            );
 
-            ViewBag.Razas = new SelectList(
-                _context.Razas.Where(r => r.Activo),
-                "IdRaza",
-                "Nombre",
-                mascota?.IdRaza);
+
+            if (mascota != null && mascota.IdEspecie > 0)
+            {
+                var razas = _repositorioRaza
+                    .ObtenerPorEspecie(mascota.IdEspecie);
+
+                ViewBag.Razas = new SelectList(
+                    razas,
+                    "IdRaza",
+                    "Nombre",
+                    mascota.IdRaza
+                );
+            }
+            else
+            {
+
+                ViewBag.Razas = new SelectList(
+                    Enumerable.Empty<Raza>(),
+                    "IdRaza",
+                    "Nombre"
+                );
+            }
         }
     }
 }

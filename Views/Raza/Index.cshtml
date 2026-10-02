@@ -16,7 +16,7 @@
             <th>Nombre</th>
             <th>Especie</th>
             <th>Activo</th>
-            <th></th>
+            <th>Acciones</th>
         </tr>
     </thead>
 
@@ -25,12 +25,21 @@
         {
             <tr>
                 <td>@raza.Nombre</td>
-                <td>@raza.Especie.Nombre</td>
+                <td>@raza.Especie?.Nombre</td>
                 <td>@raza.Activo</td>
+
                 <td>
-                    <a asp-action="Details" asp-route-id="@raza.IdRaza">Detalles</a> |
-                    <a asp-action="Edit" asp-route-id="@raza.IdRaza">Editar</a> |
-                    <a asp-action="Delete" asp-route-id="@raza.IdRaza">Eliminar</a>
+                    <a asp-action="Details" asp-route-id="@raza.IdRaza" class="btn btn-info btn-sm">
+                        Detalles
+                    </a>
+
+                    <a asp-action="Edit" asp-route-id="@raza.IdRaza" class="btn btn-warning btn-sm">
+                        Editar
+                    </a>
+
+                    <a asp-action="Delete" asp-route-id="@raza.IdRaza" class="btn btn-danger btn-sm">
+                        Eliminar
+                    </a>
                 </td>
             </tr>
         }

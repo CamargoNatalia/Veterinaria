@@ -1,0 +1,50 @@
+@model Veterinaria.Models.Raza
+
+@{
+    ViewData["Title"] = "Eliminar Raza";
+}
+
+<h1>Eliminar Raza</h1>
+
+<h3>¿Está seguro de que desea eliminar esta raza?</h3>
+
+<div>
+    <h4>Raza</h4>
+    <hr />
+
+    <dl class="row">
+        <dt class="col-sm-3">
+            Nombre
+        </dt>
+        <dd class="col-sm-9">
+            @Model.Nombre
+        </dd>
+
+        <dt class="col-sm-3">
+            Especie
+        </dt>
+        <dd class="col-sm-9">
+            @Model.Especie.Nombre
+        </dd>
+
+        <dt class="col-sm-3">
+            Activo
+        </dt>
+        <dd class="col-sm-9">
+            @Model.Activo
+        </dd>
+    </dl>
+
+    <form asp-action="Delete">
+
+        <input type="hidden" asp-for="IdRaza" />
+
+        <button type="submit" class="btn btn-danger">
+            Eliminar
+        </button>
+
+        <a asp-action="Index" class="btn btn-secondary">
+            Cancelar
+        </a>
+    </form>
+</div>

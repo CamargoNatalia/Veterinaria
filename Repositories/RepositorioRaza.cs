@@ -28,6 +28,14 @@ namespace Veterinaria.Repositories
                 .FirstOrDefault(r => r.IdRaza == id);
         }
 
+        public IEnumerable<Raza> ObtenerPorEspecie(int idEspecie)
+        {
+            return _context.Razas
+                .Where(r => r.IdEspecie == idEspecie && r.Activo)
+                .OrderBy(r => r.Nombre)
+                .ToList();
+        }
+
         public void Crear(Raza raza)
         {
             _context.Razas.Add(raza);
