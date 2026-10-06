@@ -23,6 +23,7 @@ builder.Services.AddDbContext<VeterinariaContext>(options =>
 builder.Services.AddScoped<IRepositorioCliente, RepositorioCliente>();
 builder.Services.AddScoped<IRepositorioMascota, RepositorioMascota>();
 builder.Services.AddScoped<IRepositorioEspecie, RepositorioEspecie>();
+builder.Services.AddScoped<IRepositorioTurno, RepositorioTurno>();
 builder.Services.AddScoped<IRepositorioRaza, RepositorioRaza>();
 
 

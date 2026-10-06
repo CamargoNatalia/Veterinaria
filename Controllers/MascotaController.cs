@@ -57,6 +57,8 @@ namespace Veterinaria.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Create(Mascota mascota)
         {
+            mascota.Activo = true;
+            
             if (ModelState.IsValid)
             {
                 _repositorioMascota.Crear(mascota);

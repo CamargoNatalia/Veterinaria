@@ -1,0 +1,44 @@
+@model IEnumerable<Veterinaria.Models.Turno>
+
+@{
+    ViewData["Title"] = "Turnos";
+}
+
+<h1>Turnos</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Nuevo Turno</a>
+</p>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Fecha y Hora</th>
+            <th>Mascota</th>
+            <th>Usuario</th>
+            <th>Estado</th>
+            <th>Motivo</th>
+            <th>Observaciones</th>
+            <th></th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.FechaHora.ToString("dd/MM/yyyy HH:mm")</td>
+                <td>@item.Mascota?.Nombre</td>
+                <td>@item.Usuario?.Nombre</td>
+                <td>@item.Estado</td>
+                <td>@item.Motivo</td>
+                <td>@item.Observaciones</td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.IdTurno">Editar</a> |
+                    <a asp-action="Details" asp-route-id="@item.IdTurno">Detalles</a> |
+                    <a asp-action="Delete" asp-route-id="@item.IdTurno">Eliminar</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
