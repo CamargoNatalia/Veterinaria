@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 using Veterinaria.Data;
 using Veterinaria.Interfaces;
 using Veterinaria.Models;
@@ -38,6 +39,7 @@ namespace Veterinaria.Controllers
             return View(turno);
         }
 
+        // GET: Turno/Create
         public IActionResult Create()
         {
             CargarListas();
@@ -45,12 +47,29 @@ namespace Veterinaria.Controllers
             return View();
         }
 
+        // POST: Turno/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Create(Turno turno)
         {
             if (ModelState.IsValid)
             {
+                var turnoExistente = _context.Turnos
+                    .Any(t => t.IdMascota == turno.IdMascota
+                           && t.FechaHora == turno.FechaHora);
+
+                if (turnoExistente)
+                {
+                    ModelState.AddModelError(
+                        "FechaHora",
+                        "La mascota ya tiene un turno registrado para esa fecha y hora."
+                    );
+
+                    CargarListas(turno);
+
+                    return View(turno);
+                }
+
                 _repositorioTurno.Crear(turno);
 
                 return RedirectToAction(nameof(Index));
@@ -61,6 +80,7 @@ namespace Veterinaria.Controllers
             return View(turno);
         }
 
+        // GET: Turno/Edit/5
         public IActionResult Edit(int id)
         {
             var turno = _repositorioTurno.ObtenerPorId(id);
@@ -75,6 +95,7 @@ namespace Veterinaria.Controllers
             return View(turno);
         }
 
+        // POST: Turno/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Edit(int id, Turno turno)
@@ -96,6 +117,7 @@ namespace Veterinaria.Controllers
             return View(turno);
         }
 
+        // GET: Turno/Delete/5
         public IActionResult Delete(int id)
         {
             var turno = _repositorioTurno.ObtenerPorId(id);
@@ -108,6 +130,7 @@ namespace Veterinaria.Controllers
             return View(turno);
         }
 
+        // POST: Turno/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public IActionResult DeleteConfirmed(int id)
@@ -117,24 +140,37 @@ namespace Veterinaria.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // Cargar listas para Mascotas y Usuarios
         private void CargarListas(Turno? turno = null)
         {
+            var mascotas = _context.Mascotas
+                .Include(m => m.Especie)
+                .Include(m => m.Raza)
+                .Where(m => m.Activo)
+                .ToList();
+
             ViewBag.Mascotas = new SelectList(
-                _context.Mascotas
-                    .Where(m => m.Activo)
-                    .Select(m => new
-                    {
-                        IdMascota = m.IdMascota,
-                        Nombre = m.Nombre
-                    }),
+                mascotas.Select(m => new
+                {
+                    IdMascota = m.IdMascota,
+                    Descripcion = $"{m.Nombre} - {m.Especie!.Nombre} - {m.Raza!.Nombre}"
+                }),
                 "IdMascota",
-                "Nombre",
+                "Descripcion",
                 turno?.IdMascota);
 
+            var usuarios = _context.Usuarios
+                .Where(u => u.Activo)
+                .ToList();
+
             ViewBag.Usuarios = new SelectList(
-                _context.Usuarios,
+                usuarios.Select(u => new
+                {
+                    IdUsuario = u.IdUsuario,
+                    Descripcion = $"{u.Nombre} - {u.Rol}"
+                }),
                 "IdUsuario",
-                "Nombre",
+                "Descripcion",
                 turno?.IdUsuario);
         }
     }

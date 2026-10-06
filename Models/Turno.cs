@@ -21,14 +21,14 @@ namespace Veterinaria.Models
         [StringLength(500)]
         public string? Observaciones { get; set; }
 
-        // RELACIÓN CON MASCOTA
 
+        // RELACIÓN CON MASCOTA
 
         [Required]
         public int IdMascota { get; set; }
 
         [ForeignKey(nameof(IdMascota))]
-        public Mascota Mascota { get; set; } = null!;
+        public Mascota? Mascota { get; set; }
 
 
         // RELACIÓN CON USUARIO
@@ -37,6 +37,6 @@ namespace Veterinaria.Models
         public int IdUsuario { get; set; }
 
         [ForeignKey(nameof(IdUsuario))]
-        public Usuario Usuario { get; set; } = null!;
+        public Usuario? Usuario { get; set; }
     }
 }

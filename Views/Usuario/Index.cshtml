@@ -1,0 +1,70 @@
+@model IEnumerable<Veterinaria.Models.Usuario>
+
+@{
+    ViewData["Title"] = "Usuarios";
+}
+
+<h1>Usuarios</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Nuevo Usuario</a>
+</p>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.Nombre)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Email)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Rol)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Activo)
+            </th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @foreach (var usuario in Model)
+        {
+            <tr>
+                <td>
+                    @usuario.Nombre
+                </td>
+                <td>
+                    @usuario.Email
+                </td>
+                <td>
+                    @usuario.Rol
+                </td>
+                <td>
+                    @(usuario.Activo ? "Activo" : "Inactivo")
+                </td>
+                <td>
+                    <a asp-action="Details"
+                       asp-route-id="@usuario.IdUsuario"
+                       class="btn btn-info btn-sm">
+                        Ver
+                    </a>
+
+                    <a asp-action="Edit"
+                       asp-route-id="@usuario.IdUsuario"
+                       class="btn btn-warning btn-sm">
+                        Editar
+                    </a>
+
+                    <a asp-action="Delete"
+                       asp-route-id="@usuario.IdUsuario"
+                       class="btn btn-danger btn-sm">
+                        Eliminar
+                    </a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
