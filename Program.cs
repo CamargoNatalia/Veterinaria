@@ -25,6 +25,7 @@ builder.Services.AddScoped<IRepositorioEspecie, RepositorioEspecie>();
 builder.Services.AddScoped<IRepositorioTurno, RepositorioTurno>();
 builder.Services.AddScoped<IRepositorioRaza, RepositorioRaza>();
 builder.Services.AddScoped<IRepositorioUsuario, RepositorioUsuario>();
+builder.Services.AddScoped<IRepositorioConsulta, RepositorioConsulta>();
 
 // Autenticación
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

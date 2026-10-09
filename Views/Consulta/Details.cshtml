@@ -1,0 +1,71 @@
+
+@model Veterinaria.Models.Consulta
+
+@{
+    ViewData["Title"] = "Detalle de Consulta";
+}
+
+<h1>Detalle de Consulta</h1>
+
+<hr />
+
+<div class="card">
+    <div class="card-header">
+        <strong>Consulta N.º @Model.IdConsulta</strong>
+    </div>
+
+    <div class="card-body">
+
+        <dl class="row">
+
+            <dt class="col-sm-3">Fecha y Hora</dt>
+            <dd class="col-sm-9">
+                @Model.FechaHora.ToString("dd/MM/yyyy HH:mm")
+            </dd>
+
+            <dt class="col-sm-3">Mascota</dt>
+            <dd class="col-sm-9">
+                @Model.Mascota?.Nombre
+            </dd>
+
+            <dt class="col-sm-3">Usuario</dt>
+            <dd class="col-sm-9">
+                @Model.Usuario?.Nombre
+            </dd>
+
+            <dt class="col-sm-3">Motivo</dt>
+            <dd class="col-sm-9">
+                @Model.Motivo
+            </dd>
+
+            <dt class="col-sm-3">Diagnóstico</dt>
+            <dd class="col-sm-9">
+                @Model.Diagnostico
+            </dd>
+
+            <dt class="col-sm-3">Tratamiento</dt>
+            <dd class="col-sm-9">
+                @Model.Tratamiento
+            </dd>
+
+            <dt class="col-sm-3">Observaciones</dt>
+            <dd class="col-sm-9">
+                @Model.Observaciones
+            </dd>
+
+        </dl>
+
+    </div>
+</div>
+
+<div class="mt-3">
+    <a asp-action="Edit"
+       asp-route-id="@Model.IdConsulta"
+       class="btn btn-warning">
+        Editar
+    </a>
+
+    <a asp-action="Index" class="btn btn-secondary">
+        Volver
+    </a>
+</div>

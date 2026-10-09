@@ -1,0 +1,128 @@
+
+@model Veterinaria.Models.Consulta
+
+@{
+    ViewData["Title"] = "Nueva Consulta";
+}
+
+<h1>Nueva Consulta</h1>
+
+<hr />
+
+<div class="row">
+    <div class="col-md-6">
+
+        <form asp-action="Create" method="post">
+
+            @Html.AntiForgeryToken()
+
+            <div asp-validation-summary="ModelOnly"
+                 class="text-danger"></div>
+
+            <div class="mb-3">
+                <label asp-for="FechaHora" class="form-label">
+                    Fecha y Hora
+                </label>
+
+                <input asp-for="FechaHora"
+                       type="datetime-local"
+                       asp-format="{0:yyyy-MM-ddTHH:mm}"
+                       class="form-control" />
+
+                <span asp-validation-for="FechaHora"
+                      class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="IdMascota" class="form-label">
+                    Mascota
+                </label>
+
+                <select asp-for="IdMascota"
+                        asp-items="ViewBag.Mascotas"
+                        class="form-select">
+
+                    <option value="">
+                        -- Seleccione una mascota --
+                    </option>
+
+                </select>
+
+                <span asp-validation-for="IdMascota"
+                      class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Motivo" class="form-label">
+                    Motivo
+                </label>
+
+                <textarea asp-for="Motivo"
+                          class="form-control"
+                          rows="3"
+                          maxlength="1000"></textarea>
+
+                <span asp-validation-for="Motivo"
+                      class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Diagnostico" class="form-label">
+                    Diagnóstico
+                </label>
+
+                <textarea asp-for="Diagnostico"
+                          class="form-control"
+                          rows="3"
+                          maxlength="2000"></textarea>
+
+                <span asp-validation-for="Diagnostico"
+                      class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Tratamiento" class="form-label">
+                    Tratamiento
+                </label>
+
+                <textarea asp-for="Tratamiento"
+                          class="form-control"
+                          rows="3"
+                          maxlength="2000"></textarea>
+
+                <span asp-validation-for="Tratamiento"
+                      class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Observaciones" class="form-label">
+                    Observaciones
+                </label>
+
+                <textarea asp-for="Observaciones"
+                          class="form-control"
+                          rows="3"
+                          maxlength="2000"></textarea>
+
+                <span asp-validation-for="Observaciones"
+                      class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <button type="submit" class="btn btn-primary">
+                    Guardar Consulta
+                </button>
+
+                <a asp-action="Index" class="btn btn-secondary">
+                    Volver
+                </a>
+            </div>
+
+        </form>
+
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,3 +1,4 @@
+
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -18,33 +19,26 @@ namespace Veterinaria.Models
         public string? Diagnostico { get; set; }
 
         [StringLength(2000)]
+        public string? Tratamiento { get; set; }
+
+        [StringLength(2000)]
         public string? Observaciones { get; set; }
 
-        // RELACIÓN CON MASCOTA
-
+        // Mascota
         [Required]
         public int IdMascota { get; set; }
 
         [ForeignKey(nameof(IdMascota))]
         public Mascota Mascota { get; set; } = null!;
 
-
-        // RELACIÓN CON USUARIO
-
+        // Usuario
         [Required]
         public int IdUsuario { get; set; }
 
         [ForeignKey(nameof(IdUsuario))]
         public Usuario Usuario { get; set; } = null!;
 
-        // RELACIÓN CON TRATAMIENTOS
-
-        public ICollection<ConsultaTratamiento> ConsultaTratamientos { get; set; }
-            = new List<ConsultaTratamiento>();
-
-
-        // HISTORIA CLÍNICA / ARCHIVOS
-
+        // Historia clínica
         public ICollection<HClinica> HistoriasClinicas { get; set; }
             = new List<HClinica>();
     }

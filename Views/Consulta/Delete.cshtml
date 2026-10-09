@@ -1,0 +1,68 @@
+
+@model Veterinaria.Models.Consulta
+
+@{
+    ViewData["Title"] = "Eliminar Consulta";
+}
+
+<h1>Eliminar Consulta</h1>
+
+<h4>¿Está seguro que desea eliminar esta consulta?</h4>
+
+<div class="alert alert-warning">
+    Esta acción no se puede deshacer.
+</div>
+
+<hr />
+
+<dl class="row">
+
+    <dt class="col-sm-3">Fecha y Hora</dt>
+    <dd class="col-sm-9">
+        @Model.FechaHora.ToString("dd/MM/yyyy HH:mm")
+    </dd>
+
+    <dt class="col-sm-3">Mascota</dt>
+    <dd class="col-sm-9">
+        @Model.Mascota?.Nombre
+    </dd>
+
+    <dt class="col-sm-3">Usuario</dt>
+    <dd class="col-sm-9">
+        @Model.Usuario?.Nombre
+    </dd>
+
+    <dt class="col-sm-3">Motivo</dt>
+    <dd class="col-sm-9">
+        @Model.Motivo
+    </dd>
+
+    <dt class="col-sm-3">Diagnóstico</dt>
+    <dd class="col-sm-9">
+        @Model.Diagnostico
+    </dd>
+
+    <dt class="col-sm-3">Tratamiento</dt>
+    <dd class="col-sm-9">
+        @Model.Tratamiento
+    </dd>
+
+</dl>
+
+<form asp-action="Delete"
+      asp-route-id="@Model.IdConsulta"
+      method="post">
+
+    @Html.AntiForgeryToken()
+
+    <input type="hidden" asp-for="IdConsulta" />
+
+    <button type="submit" class="btn btn-danger">
+        Eliminar
+    </button>
+
+    <a asp-action="Index" class="btn btn-secondary">
+        Cancelar
+    </a>
+
+</form>
