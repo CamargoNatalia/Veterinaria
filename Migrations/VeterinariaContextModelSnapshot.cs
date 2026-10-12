@@ -83,6 +83,9 @@ namespace Veterinaria.Migrations
                     b.Property<int>("IdMascota")
                         .HasColumnType("int");
 
+                    b.Property<int?>("IdTurno")
+                        .HasColumnType("int");
+
                     b.Property<int>("IdUsuario")
                         .HasColumnType("int");
 
@@ -101,6 +104,9 @@ namespace Veterinaria.Migrations
                     b.HasKey("IdConsulta");
 
                     b.HasIndex("IdMascota");
+
+                    b.HasIndex("IdTurno")
+                        .IsUnique();
 
                     b.HasIndex("IdUsuario");
 
@@ -330,6 +336,11 @@ namespace Veterinaria.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Veterinaria.Models.Turno", "Turno")
+                        .WithOne()
+                        .HasForeignKey("Veterinaria.Models.Consulta", "IdTurno")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Veterinaria.Models.Usuario", "Usuario")
                         .WithMany("Consultas")
                         .HasForeignKey("IdUsuario")
@@ -337,6 +348,8 @@ namespace Veterinaria.Migrations
                         .IsRequired();
 
                     b.Navigation("Mascota");
+
+                    b.Navigation("Turno");
 
                     b.Navigation("Usuario");
                 });

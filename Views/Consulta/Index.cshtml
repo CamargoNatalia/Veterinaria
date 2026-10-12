@@ -1,11 +1,21 @@
 
 @model IEnumerable<Veterinaria.Models.Consulta>
 
+@using Veterinaria.Models
+
 @{
     ViewData["Title"] = "Consultas";
+
+    var turnosPendientes =
+        ViewBag.TurnosPendientes as IEnumerable<Turno>
+        ?? Enumerable.Empty<Turno>();
+
+    var ahora = DateTime.Now;
 }
 
-<h1>Consultas</h1>
+<h1>Gestión de Consultas</h1>
+
+<hr />
 
 @if (TempData["Error"] != null)
 {
@@ -21,15 +31,131 @@
     </div>
 }
 
-<p>
-    <a asp-action="Create" class="btn btn-primary">
-        Nueva Consulta
+<div class="mb-4">
+    <a asp-action="Create"
+       class="btn btn-primary">
+        Nueva Consulta (sin turno)
     </a>
+</div>
+
+<!-- TURNOS PENDIENTES -->
+
+<h3>Turnos pendientes de atención</h3>
+
+<p class="text-muted">
+    Turnos que todavía no fueron atendidos,
+    independientemente de su fecha programada.
+</p>
+
+<div class="table-responsive mb-5">
+    <table class="table table-striped table-bordered align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>Fecha y Hora</th>
+                <th>Mascota</th>
+                <th>Motivo</th>
+                <th>Estado</th>
+                <th>Situación</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @if (turnosPendientes.Any())
+            {
+                @foreach (var turno in turnosPendientes)
+                {
+                    var situacion = turno.FechaHora.Date < ahora.Date
+                        ? "Vencido"
+                        : turno.FechaHora.Date == ahora.Date
+                            ? "Hoy"
+                            : "Próximo";
+
+                    <tr>
+                        <td>
+                            @turno.FechaHora.ToString("dd/MM/yyyy HH:mm")
+                        </td>
+
+                        <td>
+                            @turno.Mascota?.Nombre
+                        </td>
+
+                        <td>
+                            @turno.Motivo
+                        </td>
+
+                        <td>
+                            <span class="badge bg-warning text-dark">
+                                @turno.Estado
+                            </span>
+                        </td>
+
+                        <td>
+                            @if (situacion == "Vencido")
+                            {
+                                <span class="badge bg-danger">
+                                    Vencido
+                                </span>
+                            }
+                            else if (situacion == "Hoy")
+                            {
+                                <span class="badge bg-info text-dark">
+                                    Hoy
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">
+                                    Próximo
+                                </span>
+                            }
+                        </td>
+
+                        <td>
+                            <div class="d-flex gap-1 flex-wrap">
+
+                                <a asp-controller="Turno"
+                                   asp-action="Details"
+                                   asp-route-id="@turno.IdTurno"
+                                   class="btn btn-info btn-sm">
+                                    Detalles
+                                </a>
+
+                                <a asp-controller="Consulta"
+                                   asp-action="Create"
+                                   asp-route-idTurno="@turno.IdTurno"
+                                   class="btn btn-success btn-sm">
+                                    Atender
+                                </a>
+
+                            </div>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="6" class="text-center text-muted">
+                        No hay turnos pendientes de atención.
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<!-- CONSULTAS REALIZADAS -->
+
+<h3>Consultas realizadas</h3>
+
+<p class="text-muted">
+    Historial de consultas registradas en la veterinaria.
 </p>
 
 <div class="table-responsive">
-    <table class="table table-striped">
-        <thead>
+    <table class="table table-striped table-bordered align-middle">
+        <thead class="table-dark">
             <tr>
                 <th>Fecha y Hora</th>
                 <th>Mascota</th>
@@ -42,58 +168,69 @@
         </thead>
 
         <tbody>
-            @foreach (var consulta in Model)
+            @if (Model.Any())
+            {
+                @foreach (var consulta in Model)
+                {
+                    <tr>
+                        <td>
+                            @consulta.FechaHora.ToString("dd/MM/yyyy HH:mm")
+                        </td>
+
+                        <td>
+                            @consulta.Mascota?.Nombre
+                        </td>
+
+                        <td>
+                            @consulta.Usuario?.Nombre
+                        </td>
+
+                        <td>
+                            @consulta.Motivo
+                        </td>
+
+                        <td>
+                            @consulta.Diagnostico
+                        </td>
+
+                        <td>
+                            @consulta.Tratamiento
+                        </td>
+
+                        <td>
+                            <div class="d-flex gap-1 flex-wrap">
+
+                                <a asp-action="Details"
+                                   asp-route-id="@consulta.IdConsulta"
+                                   class="btn btn-info btn-sm">
+                                    Ver
+                                </a>
+
+                                <a asp-action="Edit"
+                                   asp-route-id="@consulta.IdConsulta"
+                                   class="btn btn-warning btn-sm">
+                                    Editar
+                                </a>
+
+                                @if (User.IsInRole("Administrador"))
+                                {
+                                    <a asp-action="Delete"
+                                       asp-route-id="@consulta.IdConsulta"
+                                       class="btn btn-danger btn-sm">
+                                        Eliminar
+                                    </a>
+                                }
+
+                            </div>
+                        </td>
+                    </tr>
+                }
+            }
+            else
             {
                 <tr>
-                    <td>
-                        @consulta.FechaHora.ToString("dd/MM/yyyy HH:mm")
-                    </td>
-
-                    <td>
-                        @consulta.Mascota?.Nombre
-                    </td>
-
-                    <td>
-                        @consulta.Usuario?.Nombre
-                    </td>
-
-                    <td>
-                        @consulta.Motivo
-                    </td>
-
-                    <td>
-                        @consulta.Diagnostico
-                    </td>
-
-                    <td>
-                        @consulta.Tratamiento
-                    </td>
-
-                    <td>
-                        <div class="d-flex gap-1 flex-wrap">
-
-                            <a asp-action="Details"
-                               asp-route-id="@consulta.IdConsulta"
-                               class="btn btn-info btn-sm">
-                                Ver
-                            </a>
-
-                            <a asp-action="Edit"
-                               asp-route-id="@consulta.IdConsulta"
-                               class="btn btn-warning btn-sm">
-                                Editar
-                            </a>
-
-                            @if (User.IsInRole("Administrador"))
-                            {
-                                <a asp-action="Delete"
-                                   asp-route-id="@consulta.IdConsulta"
-                                   class="btn btn-danger btn-sm">
-                                    Eliminar
-                                </a>
-                            }
-
-                        </div>
+                    <td colspan="7" class="text-center text-muted">
+                        Todavía no hay consultas registradas.
                     </td>
                 </tr>
             }

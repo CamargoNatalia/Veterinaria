@@ -1,27 +1,210 @@
 
 @model Veterinaria.Models.Consulta
 
+@using Veterinaria.Models
+
 @{
     ViewData["Title"] = "Nueva Consulta";
+
+    var turno = ViewBag.TurnoSeleccionado as Turno;
+    bool tieneTurno = Model.IdTurno.HasValue;
 }
 
 <h1>Nueva Consulta</h1>
 
 <hr />
 
-<div class="row">
-    <div class="col-md-6">
+@if (tieneTurno)
+{
+    <div class="alert alert-info">
+        <h5>Atención desde un turno</h5>
 
-        <form asp-action="Create" method="post">
+        <p class="mb-1">
+            <strong>Turno N°:</strong> @Model.IdTurno
+        </p>
 
-            @Html.AntiForgeryToken()
+        @if (turno != null)
+        {
+            <p class="mb-1">
+                <strong>Fecha programada:</strong>
+                @turno.FechaHora.ToString("dd/MM/yyyy HH:mm")
+            </p>
 
-            <div asp-validation-summary="ModelOnly"
-                 class="text-danger"></div>
+            <p class="mb-1">
+                <strong>Estado:</strong> @turno.Estado
+            </p>
+        }
+    </div>
+}
+else
+{
+    <div class="alert alert-secondary">
+        Consulta directa, sin turno previo.
+    </div>
+}
+
+<form asp-action="Create" method="post">
+
+    @Html.AntiForgeryToken()
+
+    <div asp-validation-summary="ModelOnly"
+         class="text-danger mb-3"></div>
+
+    <input type="hidden" asp-for="IdTurno" />
+
+    <span asp-validation-for="IdTurno"
+          class="text-danger"></span>
+
+    <!-- DATOS DE LA MASCOTA -->
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Datos de la mascota</h5>
+        </div>
+
+        <div class="card-body">
+
+            <div class="mb-3">
+                <label asp-for="IdMascota" class="form-label">
+                    Seleccionar Mascota
+                </label>
+
+                @if (tieneTurno)
+                {
+                    <select asp-for="IdMascota"
+                            asp-items="ViewBag.Mascotas"
+                            id="IdMascota"
+                            class="form-select"
+                            disabled>
+                    </select>
+
+                    <input type="hidden"
+                           name="IdMascota"
+                           value="@Model.IdMascota" />
+
+                    <small class="text-muted">
+                        Mascota asociada al turno seleccionado.
+                    </small>
+                }
+                else
+                {
+                    <select asp-for="IdMascota"
+                            asp-items="ViewBag.Mascotas"
+                            id="IdMascota"
+                            class="form-select">
+                        <option value="">
+                            -- Seleccione una mascota --
+                        </option>
+                    </select>
+                }
+
+                <span asp-validation-for="IdMascota"
+                      class="text-danger"></span>
+            </div>
+
+            <div id="fichaMascota"
+                 class="row g-3"
+                 style="display:none;">
+
+                <div class="col-md-4">
+                    <strong>Nombre:</strong>
+                    <div id="mascotaNombre"></div>
+                </div>
+
+                <div class="col-md-4">
+                    <strong>Especie:</strong>
+                    <div id="mascotaEspecie"></div>
+                </div>
+
+                <div class="col-md-4">
+                    <strong>Raza:</strong>
+                    <div id="mascotaRaza"></div>
+                </div>
+
+                <div class="col-md-4">
+                    <strong>Sexo:</strong>
+                    <div id="mascotaSexo"></div>
+                </div>
+
+                <div class="col-md-4">
+                    <strong>Fecha de nacimiento:</strong>
+                    <div id="mascotaNacimiento"></div>
+                </div>
+
+                <div class="col-md-4">
+                    <strong>Peso:</strong>
+                    <div id="mascotaPeso"></div>
+                </div>
+
+                <div class="col-12">
+                    <strong>Observaciones:</strong>
+                    <div id="mascotaObservaciones"></div>
+                </div>
+
+            </div>
+
+            <div id="errorFicha"
+                 class="alert alert-warning mt-3"
+                 style="display:none;">
+                No se pudieron recuperar los datos de la mascota.
+            </div>
+        </div>
+    </div>
+
+    <!-- DATOS DEL PROPIETARIO -->
+
+    <div class="card mb-4"
+         id="fichaPropietario"
+         style="display:none;">
+
+        <div class="card-header">
+            <h5 class="mb-0">Datos del propietario</h5>
+        </div>
+
+        <div class="card-body">
+            <div class="row g-3">
+
+                <div class="col-md-6">
+                    <strong>Nombre y Apellido:</strong>
+                    <div id="propietarioNombre"></div>
+                </div>
+
+                <div class="col-md-6">
+                    <strong>DNI:</strong>
+                    <div id="propietarioDni"></div>
+                </div>
+
+                <div class="col-md-6">
+                    <strong>Teléfono:</strong>
+                    <div id="propietarioTelefono"></div>
+                </div>
+
+                <div class="col-md-6">
+                    <strong>Correo electrónico:</strong>
+                    <div id="propietarioCorreo"></div>
+                </div>
+
+                <div class="col-12">
+                    <strong>Dirección:</strong>
+                    <div id="propietarioDireccion"></div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- DATOS DE LA CONSULTA -->
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Datos de la consulta</h5>
+        </div>
+
+        <div class="card-body">
 
             <div class="mb-3">
                 <label asp-for="FechaHora" class="form-label">
-                    Fecha y Hora
+                    Fecha y Hora de Atención
                 </label>
 
                 <input asp-for="FechaHora"
@@ -34,27 +217,8 @@
             </div>
 
             <div class="mb-3">
-                <label asp-for="IdMascota" class="form-label">
-                    Mascota
-                </label>
-
-                <select asp-for="IdMascota"
-                        asp-items="ViewBag.Mascotas"
-                        class="form-select">
-
-                    <option value="">
-                        -- Seleccione una mascota --
-                    </option>
-
-                </select>
-
-                <span asp-validation-for="IdMascota"
-                      class="text-danger"></span>
-            </div>
-
-            <div class="mb-3">
                 <label asp-for="Motivo" class="form-label">
-                    Motivo
+                    Motivo de Consulta
                 </label>
 
                 <textarea asp-for="Motivo"
@@ -108,21 +272,152 @@
                       class="text-danger"></span>
             </div>
 
-            <div class="mb-3">
-                <button type="submit" class="btn btn-primary">
-                    Guardar Consulta
-                </button>
-
-                <a asp-action="Index" class="btn btn-secondary">
-                    Volver
-                </a>
-            </div>
-
-        </form>
-
+        </div>
     </div>
-</div>
+
+    <div class="mb-4">
+        <button type="submit" class="btn btn-primary">
+            Guardar Consulta
+        </button>
+
+        <a asp-action="Index" class="btn btn-secondary">
+            Volver
+        </a>
+    </div>
+
+</form>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            const selector = document.getElementById("IdMascota");
+            const fichaMascota = document.getElementById("fichaMascota");
+            const fichaPropietario =
+                document.getElementById("fichaPropietario");
+            const errorFicha = document.getElementById("errorFicha");
+
+            const urlBase =
+                '@Url.Action("ObtenerDatosMascota", "Consulta")';
+
+            let solicitudActual = 0;
+
+            function mostrar(id, valor) {
+                document.getElementById(id).textContent =
+                    valor === null || valor === undefined || valor === ""
+                        ? "No registrado"
+                        : valor;
+            }
+
+            function ocultarFichas() {
+                fichaMascota.style.display = "none";
+                fichaPropietario.style.display = "none";
+                errorFicha.style.display = "none";
+            }
+
+            async function cargarMascota() {
+                const id = selector.value;
+                const numeroSolicitud = ++solicitudActual;
+
+                ocultarFichas();
+
+                if (!id || Number(id) <= 0) {
+                    return;
+                }
+
+                try {
+                    const respuesta = await fetch(
+                        urlBase + "?id=" + encodeURIComponent(id),
+                        {
+                            headers: {
+                                "Accept": "application/json"
+                            }
+                        }
+                    );
+
+                    if (!respuesta.ok) {
+                        throw new Error("Error al consultar mascota");
+                    }
+
+                    const mascota = await respuesta.json();
+
+                    // Evita mostrar respuestas de selecciones anteriores
+                    if (numeroSolicitud !== solicitudActual) {
+                        return;
+                    }
+
+                    mostrar("mascotaNombre", mascota.nombre);
+                    mostrar("mascotaEspecie", mascota.especie);
+                    mostrar("mascotaRaza", mascota.raza);
+                    mostrar("mascotaSexo", mascota.sexo);
+
+                    const nacimiento = mascota.fechaNacimiento
+                        ? new Date(mascota.fechaNacimiento)
+                            .toLocaleDateString("es-AR", {
+                                timeZone: "UTC"
+                            })
+                        : null;
+
+                    mostrar("mascotaNacimiento", nacimiento);
+
+                    mostrar(
+                        "mascotaPeso",
+                        mascota.peso !== null
+                            ? mascota.peso + " kg"
+                            : null
+                    );
+
+                    mostrar(
+                        "mascotaObservaciones",
+                        mascota.observaciones
+                    );
+
+                    fichaMascota.style.display = "";
+
+                    if (mascota.propietario) {
+                        mostrar(
+                            "propietarioNombre",
+                            mascota.propietario.nombreCompleto
+                        );
+
+                        mostrar(
+                            "propietarioDni",
+                            mascota.propietario.dni
+                        );
+
+                        mostrar(
+                            "propietarioTelefono",
+                            mascota.propietario.telefono
+                        );
+
+                        mostrar(
+                            "propietarioCorreo",
+                            mascota.propietario.correo
+                        );
+
+                        mostrar(
+                            "propietarioDireccion",
+                            mascota.propietario.direccion
+                        );
+
+                        fichaPropietario.style.display = "";
+                    }
+
+                } catch (error) {
+                    if (numeroSolicitud === solicitudActual) {
+                        errorFicha.style.display = "";
+                    }
+                }
+            }
+
+            selector.addEventListener("change", cargarMascota);
+
+            // Recupera los datos cuando la mascota viene de un turno
+            if (selector.value && Number(selector.value) > 0) {
+                cargarMascota();
+            }
+        });
+    </script>
 }

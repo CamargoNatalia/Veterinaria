@@ -10,5 +10,9 @@ namespace Veterinaria.Interfaces
         void Crear(Consulta consulta);
         void Editar(Consulta consulta);
         void Eliminar(int id);
+
+        // Integración con turnos
+        bool ExisteConsultaParaTurno(int idTurno);
+        bool RegistrarAtencion(Consulta consulta, int idTurno);
     }
 }

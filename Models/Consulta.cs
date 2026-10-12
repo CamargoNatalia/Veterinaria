@@ -38,6 +38,12 @@ namespace Veterinaria.Models
         [ForeignKey(nameof(IdUsuario))]
         public Usuario Usuario { get; set; } = null!;
 
+        // Turno opcional
+        public int? IdTurno { get; set; }
+
+        [ForeignKey(nameof(IdTurno))]
+        public Turno? Turno { get; set; }
+
         // Historia clínica
         public ICollection<HClinica> HistoriasClinicas { get; set; }
             = new List<HClinica>();

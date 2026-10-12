@@ -1,3 +1,4 @@
+
 using Microsoft.EntityFrameworkCore;
 using Veterinaria.Data;
 using Veterinaria.Interfaces;
@@ -21,11 +22,24 @@ namespace Veterinaria.Repositories
                 .ToList();
         }
 
-        public Turno ObtenerPorId(int id)
+        public Turno? ObtenerPorId(int id)
         {
             return _context.Turnos
                 .Include(t => t.Mascota)
                 .FirstOrDefault(t => t.IdTurno == id);
+        }
+
+        // Turnos pendientes sin consulta asociada
+        public IEnumerable<Turno> ObtenerPendientes()
+        {
+            return _context.Turnos
+                .AsNoTracking()
+                .Include(t => t.Mascota)
+                .Where(t => t.Estado == "Pendiente")
+                .Where(t => !_context.Consultas
+                    .Any(c => c.IdTurno == t.IdTurno))
+                .OrderBy(t => t.FechaHora)
+                .ToList();
         }
 
         public void Crear(Turno turno)

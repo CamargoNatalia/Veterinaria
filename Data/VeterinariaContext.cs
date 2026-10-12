@@ -6,7 +6,8 @@ namespace Veterinaria.Data
 {
     public class VeterinariaContext : DbContext
     {
-        public VeterinariaContext(DbContextOptions<VeterinariaContext> options)
+        public VeterinariaContext(
+            DbContextOptions<VeterinariaContext> options)
             : base(options)
         {
         }
@@ -24,6 +25,17 @@ namespace Veterinaria.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // Cada turno puede tener una sola consulta
+            modelBuilder.Entity<Consulta>()
+                .HasOne(c => c.Turno)
+                .WithOne()
+                .HasForeignKey<Consulta>(c => c.IdTurno)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Consulta>()
+                .HasIndex(c => c.IdTurno)
+                .IsUnique();
         }
     }
 }

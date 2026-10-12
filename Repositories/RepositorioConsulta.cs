@@ -1,5 +1,6 @@
 
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 using Veterinaria.Data;
 using Veterinaria.Interfaces;
 using Veterinaria.Models;
@@ -29,6 +30,7 @@ namespace Veterinaria.Repositories
             return _context.Consultas
                 .Include(c => c.Mascota)
                 .Include(c => c.Usuario)
+                .Include(c => c.HistoriasClinicas)
                 .FirstOrDefault(c => c.IdConsulta == id);
         }
 
@@ -53,6 +55,45 @@ namespace Veterinaria.Repositories
                 _context.Consultas.Remove(consulta);
                 _context.SaveChanges();
             }
+        }
+
+        // Verifica si el turno ya fue utilizado
+        public bool ExisteConsultaParaTurno(int idTurno)
+        {
+            return _context.Consultas
+                .Any(c => c.IdTurno == idTurno);
+        }
+
+        // Registra la consulta y completa el turno
+        public bool RegistrarAtencion(Consulta consulta, int idTurno)
+        {
+            using var transaccion = _context.Database
+                .BeginTransaction(IsolationLevel.ReadCommitted);
+
+            // Bloquea el turno para impedir atenciones simultáneas
+            var turnosActualizados = _context.Turnos
+                .Where(t => t.IdTurno == idTurno
+                    && t.Estado == "Pendiente")
+                .Where(t => !_context.Consultas
+                    .Any(c => c.IdTurno == t.IdTurno))
+                .Where(t => t.IdMascota == consulta.IdMascota)
+                .ExecuteUpdate(t => t
+                    .SetProperty(x => x.Estado, "Atendido"));
+
+            if (turnosActualizados != 1)
+            {
+                transaccion.Rollback();
+                return false;
+            }
+
+            consulta.IdTurno = idTurno;
+
+            _context.Consultas.Add(consulta);
+            _context.SaveChanges();
+
+            transaccion.Commit();
+
+            return true;
         }
     }
 }
