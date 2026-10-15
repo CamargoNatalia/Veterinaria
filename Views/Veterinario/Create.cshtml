@@ -1,0 +1,76 @@
+@model Veterinaria.Models.Veterinario
+
+@{
+    ViewData["Title"] = "Nuevo Veterinario";
+}
+
+<h1>Nuevo Veterinario</h1>
+
+<hr />
+
+<div class="row">
+    <div class="col-md-7">
+
+        <form asp-action="Create" method="post">
+
+            @Html.AntiForgeryToken()
+
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="mb-3">
+                <label asp-for="Nombre" class="form-label"></label>
+                <input asp-for="Nombre" class="form-control" />
+                <span asp-validation-for="Nombre" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Apellido" class="form-label"></label>
+                <input asp-for="Apellido" class="form-control" />
+                <span asp-validation-for="Apellido" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Matricula" class="form-label">
+                    Matrícula
+                </label>
+                <input asp-for="Matricula" class="form-control" />
+                <span asp-validation-for="Matricula" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Especialidad" class="form-label"></label>
+                <input asp-for="Especialidad" class="form-control" />
+                <span asp-validation-for="Especialidad" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Telefono" class="form-label">
+                    Teléfono
+                </label>
+                <input asp-for="Telefono" class="form-control" />
+                <span asp-validation-for="Telefono" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Correo" class="form-label">
+                    Correo electrónico
+                </label>
+                <input asp-for="Correo" type="email" class="form-control" />
+                <span asp-validation-for="Correo" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                Guardar Veterinario
+            </button>
+
+            <a asp-action="Index" class="btn btn-secondary">
+                Volver
+            </a>
+
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

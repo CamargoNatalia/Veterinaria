@@ -1,4 +1,3 @@
-
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Veterinaria.Data;
@@ -26,6 +25,7 @@ builder.Services.AddScoped<IRepositorioTurno, RepositorioTurno>();
 builder.Services.AddScoped<IRepositorioRaza, RepositorioRaza>();
 builder.Services.AddScoped<IRepositorioUsuario, RepositorioUsuario>();
 builder.Services.AddScoped<IRepositorioConsulta, RepositorioConsulta>();
+builder.Services.AddScoped<IRepositorioVeterinario, RepositorioVeterinario>();
 
 // Autenticación
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

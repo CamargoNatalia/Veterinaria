@@ -1,22 +1,25 @@
-
 @model Veterinaria.Models.Consulta
 
 @{
-    ViewData["Title"] = "Detalle de Consulta";
+    ViewData["Title"] = "Detalles de la Consulta";
 }
 
-<h1>Detalle de Consulta</h1>
+<h1>Detalles de la Consulta</h1>
 
 <hr />
 
-<div class="card">
+<!-- DATOS GENERALES -->
+
+<div class="card mb-4">
     <div class="card-header">
-        <strong>Consulta N.º @Model.IdConsulta</strong>
+        <h5 class="mb-0">Información de la Atención</h5>
     </div>
 
     <div class="card-body">
-
         <dl class="row">
+
+            <dt class="col-sm-3">N° de Consulta</dt>
+            <dd class="col-sm-9">@Model.IdConsulta</dd>
 
             <dt class="col-sm-3">Fecha y Hora</dt>
             <dd class="col-sm-9">
@@ -28,41 +31,142 @@
                 @Model.Mascota?.Nombre
             </dd>
 
-            <dt class="col-sm-3">Usuario</dt>
+            <dt class="col-sm-3">Turno asociado</dt>
+            <dd class="col-sm-9">
+                @if (Model.IdTurno.HasValue)
+                {
+                    <a asp-controller="Turno" asp-action="Details" asp-route-id="@Model.IdTurno">
+                        Turno N° @Model.IdTurno
+                    </a>
+                }
+                else
+                {
+                    <span class="text-muted">
+                        Consulta directa (sin turno)
+                    </span>
+                }
+            </dd>
+
+            <dt class="col-sm-3">Veterinario responsable</dt>
+            <dd class="col-sm-9">
+                @if (Model.Veterinario != null)
+                {
+                    <span>
+                        @Model.Veterinario.Nombre
+                        @Model.Veterinario.Apellido
+                    </span>
+
+                    <span class="text-muted">
+                        - Matrícula: @Model.Veterinario.Matricula
+                    </span>
+                }
+                else
+                {
+                    <span class="text-muted">
+                        Sin asignar
+                    </span>
+                }
+            </dd>
+
+            <dt class="col-sm-3">Registrado por</dt>
             <dd class="col-sm-9">
                 @Model.Usuario?.Nombre
             </dd>
 
+        </dl>
+    </div>
+</div>
+
+<!-- DATOS CLÍNICOS -->
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Datos Clínicos</h5>
+    </div>
+
+    <div class="card-body">
+        <dl class="row">
+
             <dt class="col-sm-3">Motivo</dt>
             <dd class="col-sm-9">
-                @Model.Motivo
+                @(Model.Motivo ?? "Sin registrar")
             </dd>
 
             <dt class="col-sm-3">Diagnóstico</dt>
             <dd class="col-sm-9">
-                @Model.Diagnostico
+                @(Model.Diagnostico ?? "Sin registrar")
             </dd>
 
             <dt class="col-sm-3">Tratamiento</dt>
             <dd class="col-sm-9">
-                @Model.Tratamiento
+                @(Model.Tratamiento ?? "Sin registrar")
             </dd>
 
             <dt class="col-sm-3">Observaciones</dt>
             <dd class="col-sm-9">
-                @Model.Observaciones
+                @(Model.Observaciones ?? "Sin registrar")
             </dd>
 
         </dl>
+    </div>
+</div>
+
+<!-- HISTORIA CLÍNICA -->
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Archivos de Historia Clínica</h5>
+    </div>
+
+    <div class="card-body">
+
+        @if (Model.HistoriasClinicas != null &&
+             Model.HistoriasClinicas.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Archivo</th>
+                            <th>Formato</th>
+                            <th>Fecha de Carga</th>
+                            <th>Descripción</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var archivo in Model.HistoriasClinicas)
+                        {
+                            <tr>
+                                <td>@archivo.NombreArchivo</td>
+                                <td>@archivo.FormatoArchivo</td>
+                                <td>
+                                    @archivo.CargaArchivo.ToString("dd/MM/yyyy HH:mm")
+                                </td>
+                                <td>
+                                    @(archivo.Descripcion ?? "-")
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <p class="text-muted mb-0">
+                Esta consulta todavía no tiene archivos clínicos asociados.
+            </p>
+        }
 
     </div>
 </div>
 
-<div class="mt-3">
-    <a asp-action="Edit"
-       asp-route-id="@Model.IdConsulta"
-       class="btn btn-warning">
-        Editar
+<!-- ACCIONES -->
+
+<div class="mb-4">
+    <a asp-action="Edit" asp-route-id="@Model.IdConsulta" class="btn btn-warning">
+        Editar Consulta
     </a>
 
     <a asp-action="Index" class="btn btn-secondary">

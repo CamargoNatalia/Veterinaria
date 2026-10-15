@@ -1,0 +1,70 @@
+@model Veterinaria.Models.Veterinario
+
+@{
+    ViewData["Title"] = "Detalles del Veterinario";
+}
+
+<h1>Detalles del Veterinario</h1>
+
+<hr />
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            @Model.Nombre @Model.Apellido
+        </h5>
+    </div>
+
+    <div class="card-body">
+        <dl class="row">
+
+            <dt class="col-sm-3">Nombre</dt>
+            <dd class="col-sm-9">@Model.Nombre</dd>
+
+            <dt class="col-sm-3">Apellido</dt>
+            <dd class="col-sm-9">@Model.Apellido</dd>
+
+            <dt class="col-sm-3">Matrícula</dt>
+            <dd class="col-sm-9">@Model.Matricula</dd>
+
+            <dt class="col-sm-3">Especialidad</dt>
+            <dd class="col-sm-9">
+                @(Model.Especialidad ?? "No registrada")
+            </dd>
+
+            <dt class="col-sm-3">Teléfono</dt>
+            <dd class="col-sm-9">
+                @(Model.Telefono ?? "No registrado")
+            </dd>
+
+            <dt class="col-sm-3">Correo</dt>
+            <dd class="col-sm-9">
+                @(Model.Correo ?? "No registrado")
+            </dd>
+
+            <dt class="col-sm-3">Estado</dt>
+            <dd class="col-sm-9">
+                @if (Model.Activo)
+                {
+                    <span class="badge bg-success">Activo</span>
+                }
+                else
+                {
+                    <span class="badge bg-secondary">Inactivo</span>
+                }
+            </dd>
+
+        </dl>
+    </div>
+</div>
+
+@if (User.IsInRole("Administrador"))
+{
+    <a asp-action="Edit" asp-route-id="@Model.IdVeterinario" class="btn btn-warning">
+        Editar
+    </a>
+}
+
+<a asp-action="Index" class="btn btn-secondary">
+    Volver
+</a>

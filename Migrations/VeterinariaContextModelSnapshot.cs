@@ -89,6 +89,9 @@ namespace Veterinaria.Migrations
                     b.Property<int>("IdUsuario")
                         .HasColumnType("int");
 
+                    b.Property<int?>("IdVeterinario")
+                        .HasColumnType("int");
+
                     b.Property<string>("Motivo")
                         .HasMaxLength(1000)
                         .HasColumnType("varchar(1000)");
@@ -109,6 +112,8 @@ namespace Veterinaria.Migrations
                         .IsUnique();
 
                     b.HasIndex("IdUsuario");
+
+                    b.HasIndex("IdVeterinario");
 
                     b.ToTable("Consultas");
                 });
@@ -328,6 +333,55 @@ namespace Veterinaria.Migrations
                     b.ToTable("Usuarios");
                 });
 
+            modelBuilder.Entity("Veterinaria.Models.Veterinario", b =>
+                {
+                    b.Property<int>("IdVeterinario")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("IdVeterinario"));
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Apellido")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("Correo")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
+                    b.Property<string>("Especialidad")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
+                    b.Property<string>("Matricula")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("Telefono")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)");
+
+                    b.HasKey("IdVeterinario");
+
+                    b.HasIndex("Matricula")
+                        .IsUnique();
+
+                    b.ToTable("Veterinarios");
+                });
+
             modelBuilder.Entity("Veterinaria.Models.Consulta", b =>
                 {
                     b.HasOne("Veterinaria.Models.Mascota", "Mascota")
@@ -347,11 +401,18 @@ namespace Veterinaria.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Veterinaria.Models.Veterinario", "Veterinario")
+                        .WithMany()
+                        .HasForeignKey("IdVeterinario")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Mascota");
 
                     b.Navigation("Turno");
 
                     b.Navigation("Usuario");
+
+                    b.Navigation("Veterinario");
                 });
 
             modelBuilder.Entity("Veterinaria.Models.HClinica", b =>

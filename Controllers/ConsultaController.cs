@@ -1,4 +1,3 @@
-
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -30,7 +29,6 @@ namespace Veterinaria.Controllers
             _context = context;
         }
 
-        // GET: Consulta
         public IActionResult Index()
         {
             var consultas = _repositorioConsulta.ObtenerTodos();
@@ -41,7 +39,6 @@ namespace Veterinaria.Controllers
             return View(consultas);
         }
 
-        // GET: Consulta/Details
         public IActionResult Details(int id)
         {
             var consulta = _repositorioConsulta.ObtenerPorId(id);
@@ -52,7 +49,7 @@ namespace Veterinaria.Controllers
             return View(consulta);
         }
 
-        // Datos de mascota y propietario para AJAX
+        // Datos de mascota y propietario para el formulario
         [HttpGet]
         public IActionResult ObtenerDatosMascota(int id)
         {
@@ -91,7 +88,7 @@ namespace Veterinaria.Controllers
             });
         }
 
-        // GET: Consulta/Create
+        // Formulario de nueva consulta
         public IActionResult Create(int? idTurno)
         {
             var consulta = new Consulta
@@ -124,17 +121,20 @@ namespace Veterinaria.Controllers
                 ViewBag.TurnoSeleccionado = turno;
             }
 
-            CargarMascotas(consulta.IdMascota);
+            CargarListas(
+                consulta.IdMascota,
+                consulta.IdVeterinario);
 
             return View(consulta);
         }
 
-        // POST: Consulta/Create
+        // Guardar consulta: normal o con atajo a nuevo turno
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Create(
-            [Bind("FechaHora,Motivo,Diagnostico,Tratamiento,Observaciones,IdMascota,IdTurno")]
-            Consulta consulta)
+            [Bind("FechaHora,Motivo,Diagnostico,Tratamiento,Observaciones,IdMascota,IdTurno,IdVeterinario")]
+            Consulta consulta,
+            string? accion)
         {
             var idClaim = User.FindFirst(
                 ClaimTypes.NameIdentifier)?.Value;
@@ -148,15 +148,25 @@ namespace Veterinaria.Controllers
             ModelState.Remove(nameof(Consulta.Usuario));
             ModelState.Remove(nameof(Consulta.Mascota));
             ModelState.Remove(nameof(Consulta.Turno));
+            ModelState.Remove(nameof(Consulta.Veterinario));
 
-            var mascota = _repositorioMascota
-                .ObtenerPorId(consulta.IdMascota);
-
-            if (mascota == null)
+            if (_repositorioMascota.ObtenerPorId(
+                    consulta.IdMascota) == null)
             {
                 ModelState.AddModelError(
                     nameof(Consulta.IdMascota),
                     "Seleccione una mascota válida.");
+            }
+
+            if (!consulta.IdVeterinario.HasValue ||
+                !_context.Veterinarios.Any(v =>
+                    v.IdVeterinario ==
+                        consulta.IdVeterinario.Value &&
+                    v.Activo))
+            {
+                ModelState.AddModelError(
+                    nameof(Consulta.IdVeterinario),
+                    "Seleccione un veterinario activo.");
             }
 
             if (consulta.IdTurno.HasValue)
@@ -194,42 +204,53 @@ namespace Veterinaria.Controllers
 
             if (ModelState.IsValid)
             {
+                bool guardado = false;
+
                 if (consulta.IdTurno.HasValue)
                 {
-                    bool registrado =
+                    guardado =
                         _repositorioConsulta.RegistrarAtencion(
                             consulta,
                             consulta.IdTurno.Value);
-
-                    if (registrado)
-                    {
-                        TempData["Mensaje"] =
-                            "Consulta registrada. El turno fue marcado como atendido.";
-
-                        return RedirectToAction(nameof(Index));
-                    }
-
-                    ModelState.AddModelError(
-                        "",
-                        "No se pudo registrar la atención. El turno puede haber sido atendido por otro usuario.");
                 }
                 else
                 {
                     _repositorioConsulta.Crear(consulta);
+                    guardado = true;
+                }
+
+                if (guardado)
+                {
+                    // Segundo botón: guardar y abrir nuevo turno
+                    if (accion == "reservarTurno")
+                    {
+                        TempData["Mensaje"] =
+                            "Consulta guardada. Ahora puede reservar el próximo turno.";
+
+                        return RedirectToAction(
+                            "Create",
+                            "Turno",
+                            new { idMascota = consulta.IdMascota });
+                    }
 
                     TempData["Mensaje"] =
                         "Consulta registrada correctamente.";
 
                     return RedirectToAction(nameof(Index));
                 }
+
+                ModelState.AddModelError(
+                    "",
+                    "No se pudo registrar la atención. El turno ya no está disponible.");
             }
 
-            CargarMascotas(consulta.IdMascota);
+            CargarListas(
+                consulta.IdMascota,
+                consulta.IdVeterinario);
 
             return View(consulta);
         }
 
-        // GET: Consulta/Edit
         public IActionResult Edit(int id)
         {
             var consulta = _repositorioConsulta.ObtenerPorId(id);
@@ -237,17 +258,18 @@ namespace Veterinaria.Controllers
             if (consulta == null)
                 return NotFound();
 
-            CargarMascotas(consulta.IdMascota);
+            CargarListas(
+                consulta.IdMascota,
+                consulta.IdVeterinario);
 
             return View(consulta);
         }
 
-        // POST: Consulta/Edit
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Edit(
             int id,
-            [Bind("IdConsulta,FechaHora,Motivo,Diagnostico,Tratamiento,Observaciones,IdMascota")]
+            [Bind("IdConsulta,FechaHora,Motivo,Diagnostico,Tratamiento,Observaciones,IdMascota,IdVeterinario")]
             Consulta datos)
         {
             if (id != datos.IdConsulta)
@@ -261,9 +283,11 @@ namespace Veterinaria.Controllers
             ModelState.Remove(nameof(Consulta.IdUsuario));
             ModelState.Remove(nameof(Consulta.Usuario));
             ModelState.Remove(nameof(Consulta.Mascota));
+            ModelState.Remove(nameof(Consulta.Turno));
+            ModelState.Remove(nameof(Consulta.Veterinario));
 
-            if (_repositorioMascota.ObtenerPorId(datos.IdMascota)
-                == null)
+            if (_repositorioMascota.ObtenerPorId(
+                    datos.IdMascota) == null)
             {
                 ModelState.AddModelError(
                     nameof(Consulta.IdMascota),
@@ -278,6 +302,16 @@ namespace Veterinaria.Controllers
                     "No se puede cambiar la mascota de una consulta asociada a un turno.");
             }
 
+            if (datos.IdVeterinario.HasValue &&
+                !_context.Veterinarios.Any(v =>
+                    v.IdVeterinario ==
+                        datos.IdVeterinario.Value))
+            {
+                ModelState.AddModelError(
+                    nameof(Consulta.IdVeterinario),
+                    "Seleccione un veterinario válido.");
+            }
+
             if (ModelState.IsValid)
             {
                 consulta.FechaHora = datos.FechaHora;
@@ -287,6 +321,7 @@ namespace Veterinaria.Controllers
                 consulta.Observaciones = datos.Observaciones;
                 consulta.IdMascota = datos.IdMascota;
 
+                // Conserva el veterinario que tenía asignado
                 _repositorioConsulta.Editar(consulta);
 
                 TempData["Mensaje"] =
@@ -295,12 +330,13 @@ namespace Veterinaria.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            CargarMascotas(datos.IdMascota);
+            CargarListas(
+                datos.IdMascota,
+                datos.IdVeterinario);
 
             return View(datos);
         }
 
-        // GET: Consulta/Delete
         [Authorize(Roles = "Administrador")]
         public IActionResult Delete(int id)
         {
@@ -312,7 +348,6 @@ namespace Veterinaria.Controllers
             return View(consulta);
         }
 
-        // POST: Consulta/Delete
         [HttpPost, ActionName("Delete")]
         [Authorize(Roles = "Administrador")]
         [ValidateAntiForgeryToken]
@@ -347,14 +382,34 @@ namespace Veterinaria.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // Carga el desplegable de mascotas
-        private void CargarMascotas(int? idMascota = null)
+        private void CargarListas(
+            int? idMascota = null,
+            int? idVeterinario = null)
         {
             ViewBag.Mascotas = new SelectList(
                 _repositorioMascota.ObtenerTodos(),
                 "IdMascota",
                 "Nombre",
                 idMascota);
+
+            var veterinarios = _context.Veterinarios
+                .Where(v => v.Activo ||
+                    v.IdVeterinario == idVeterinario)
+                .OrderBy(v => v.Apellido)
+                .ThenBy(v => v.Nombre)
+                .Select(v => new
+                {
+                    v.IdVeterinario,
+                    NombreCompleto =
+                        v.Apellido + ", " + v.Nombre
+                })
+                .ToList();
+
+            ViewBag.Veterinarios = new SelectList(
+                veterinarios,
+                "IdVeterinario",
+                "NombreCompleto",
+                idVeterinario);
         }
     }
 }

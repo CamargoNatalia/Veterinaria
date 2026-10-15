@@ -1,4 +1,3 @@
-
 using Microsoft.EntityFrameworkCore;
 using Veterinaria.Models;
 
@@ -21,12 +20,13 @@ namespace Veterinaria.Data
         public DbSet<Consulta> Consultas { get; set; }
         public DbSet<HClinica> HistoriasClinicas { get; set; }
         public DbSet<Usuario> Usuarios { get; set; }
+        public DbSet<Veterinario> Veterinarios { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // Cada turno puede tener una sola consulta
+            // Un turno puede tener una sola consulta
             modelBuilder.Entity<Consulta>()
                 .HasOne(c => c.Turno)
                 .WithOne()
@@ -36,6 +36,18 @@ namespace Veterinaria.Data
             modelBuilder.Entity<Consulta>()
                 .HasIndex(c => c.IdTurno)
                 .IsUnique();
+
+            // Matrícula única
+            modelBuilder.Entity<Veterinario>()
+                .HasIndex(v => v.Matricula)
+                .IsUnique();
+
+            // Un veterinario puede realizar muchas consultas
+            modelBuilder.Entity<Consulta>()
+                .HasOne(c => c.Veterinario)
+                .WithMany()
+                .HasForeignKey(c => c.IdVeterinario)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

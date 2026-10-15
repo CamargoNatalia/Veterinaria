@@ -1,4 +1,3 @@
-
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -31,7 +30,7 @@ namespace Veterinaria.Models
         [ForeignKey(nameof(IdMascota))]
         public Mascota Mascota { get; set; } = null!;
 
-        // Usuario
+        // Usuario que registra la consulta
         [Required]
         public int IdUsuario { get; set; }
 
@@ -44,7 +43,13 @@ namespace Veterinaria.Models
         [ForeignKey(nameof(IdTurno))]
         public Turno? Turno { get; set; }
 
-        // Historia clínica
+        // Veterinario responsable
+        public int? IdVeterinario { get; set; }
+
+        [ForeignKey(nameof(IdVeterinario))]
+        public Veterinario? Veterinario { get; set; }
+
+        // Archivos clínicos
         public ICollection<HClinica> HistoriasClinicas { get; set; }
             = new List<HClinica>();
     }

@@ -1,4 +1,3 @@
-
 using Microsoft.EntityFrameworkCore;
 using System.Data;
 using Veterinaria.Data;
@@ -21,6 +20,7 @@ namespace Veterinaria.Repositories
             return _context.Consultas
                 .Include(c => c.Mascota)
                 .Include(c => c.Usuario)
+                .Include(c => c.Veterinario)
                 .OrderByDescending(c => c.FechaHora)
                 .ToList();
         }
@@ -30,6 +30,7 @@ namespace Veterinaria.Repositories
             return _context.Consultas
                 .Include(c => c.Mascota)
                 .Include(c => c.Usuario)
+                .Include(c => c.Veterinario)
                 .Include(c => c.HistoriasClinicas)
                 .FirstOrDefault(c => c.IdConsulta == id);
         }
@@ -57,20 +58,18 @@ namespace Veterinaria.Repositories
             }
         }
 
-        // Verifica si el turno ya fue utilizado
         public bool ExisteConsultaParaTurno(int idTurno)
         {
             return _context.Consultas
                 .Any(c => c.IdTurno == idTurno);
         }
 
-        // Registra la consulta y completa el turno
+        // Guarda la atención y actualiza el turno
         public bool RegistrarAtencion(Consulta consulta, int idTurno)
         {
             using var transaccion = _context.Database
                 .BeginTransaction(IsolationLevel.ReadCommitted);
 
-            // Bloquea el turno para impedir atenciones simultáneas
             var turnosActualizados = _context.Turnos
                 .Where(t => t.IdTurno == idTurno
                     && t.Estado == "Pendiente")

@@ -1,0 +1,57 @@
+@model Veterinaria.Models.Veterinario
+
+@{
+    ViewData["Title"] = "Desactivar Veterinario";
+}
+
+<h1>Desactivar Veterinario</h1>
+
+<hr />
+
+<div class="alert alert-warning">
+    ¿Está seguro de que desea desactivar este veterinario?
+
+    <p class="mb-0 mt-2">
+        El registro permanecerá en la base de datos
+        y podrá reactivarse posteriormente.
+    </p>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <dl class="row">
+
+            <dt class="col-sm-3">Nombre</dt>
+            <dd class="col-sm-9">
+                @Model.Nombre @Model.Apellido
+            </dd>
+
+            <dt class="col-sm-3">Matrícula</dt>
+            <dd class="col-sm-9">@Model.Matricula</dd>
+
+            <dt class="col-sm-3">Especialidad</dt>
+            <dd class="col-sm-9">
+                @(Model.Especialidad ?? "No registrada")
+            </dd>
+
+            <dt class="col-sm-3">Estado</dt>
+            <dd class="col-sm-9">
+                @(Model.Activo ? "Activo" : "Inactivo")
+            </dd>
+
+        </dl>
+    </div>
+</div>
+
+<form asp-action="Delete" asp-route-id="@Model.IdVeterinario" method="post">
+
+    @Html.AntiForgeryToken()
+
+    <button type="submit" class="btn btn-danger">
+        Confirmar Desactivación
+    </button>
+
+    <a asp-action="Index" class="btn btn-secondary">
+        Cancelar
+    </a>
+</form>
