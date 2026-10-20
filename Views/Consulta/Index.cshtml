@@ -177,11 +177,10 @@
                         </td>
 
                         <td>
-                            @if (consulta.Veterinario != null)
+                            @if (consulta.Veterinario?.Usuario != null)
                             {
                                 <span>
-                                    @consulta.Veterinario.Nombre
-                                    @consulta.Veterinario.Apellido
+                                    @consulta.Veterinario.Usuario.Nombre
                                 </span>
                             }
                             else

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Veterinaria.Interfaces;
 using Veterinaria.Models;
@@ -10,11 +11,14 @@ namespace Veterinaria.Controllers
     public class VeterinarioController : Controller
     {
         private readonly IRepositorioVeterinario _repositorioVeterinario;
+        private readonly IRepositorioUsuario _repositorioUsuario;
 
         public VeterinarioController(
-            IRepositorioVeterinario repositorioVeterinario)
+            IRepositorioVeterinario repositorioVeterinario,
+            IRepositorioUsuario repositorioUsuario)
         {
             _repositorioVeterinario = repositorioVeterinario;
+            _repositorioUsuario = repositorioUsuario;
         }
 
         // Listado
@@ -39,6 +43,7 @@ namespace Veterinaria.Controllers
         [Authorize(Roles = "Administrador")]
         public IActionResult Create()
         {
+            CargarUsuarios();
             return View(new Veterinario());
         }
 
@@ -47,16 +52,14 @@ namespace Veterinaria.Controllers
         [Authorize(Roles = "Administrador")]
         [ValidateAntiForgeryToken]
         public IActionResult Create(
-            [Bind("Nombre,Apellido,Matricula,Especialidad,Telefono,Correo")]
+            [Bind("IdUsuario,Matricula,Especialidad,Telefono")]
             Veterinario veterinario)
         {
             NormalizarDatos(veterinario);
-            veterinario.Activo = true;
 
-            ModelState.Clear();
-            TryValidateModel(veterinario);
-
+            ModelState.Remove(nameof(Veterinario.Usuario));
             ValidarDatos(veterinario);
+            ValidarUsuario(veterinario.IdUsuario);
 
             if (ModelState.IsValid)
             {
@@ -71,13 +74,13 @@ namespace Veterinaria.Controllers
                 }
                 catch (DbUpdateException)
                 {
-                    ModelState.AddModelError(
-                        "",
+                    ModelState.AddModelError("",
                         "No se pudo registrar el veterinario. " +
-                        "Verifique que la matrícula no esté duplicada.");
+                        "Verifique la matrícula y el usuario.");
                 }
             }
 
+            CargarUsuarios();
             return View(veterinario);
         }
 
@@ -99,7 +102,7 @@ namespace Veterinaria.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Edit(
             int id,
-            [Bind("IdVeterinario,Nombre,Apellido,Matricula,Especialidad,Telefono,Correo,Activo")]
+            [Bind("IdVeterinario,Matricula,Especialidad,Telefono")]
             Veterinario datos)
         {
             if (id != datos.IdVeterinario)
@@ -112,24 +115,17 @@ namespace Veterinaria.Controllers
 
             NormalizarDatos(datos);
 
-            ModelState.Clear();
-            TryValidateModel(datos);
+            // La cuenta asociada no se modifica al editar
+            datos.IdUsuario = veterinario.IdUsuario;
 
+            ModelState.Remove(nameof(Veterinario.Usuario));
             ValidarDatos(datos, id);
 
             if (ModelState.IsValid)
             {
-                veterinario.Nombre = datos.Nombre;
-                veterinario.Apellido = datos.Apellido;
-                veterinario.Matricula = datos.Matricula;
-                veterinario.Especialidad = datos.Especialidad;
-                veterinario.Telefono = datos.Telefono;
-                veterinario.Correo = datos.Correo;
-                veterinario.Activo = datos.Activo;
-
                 try
                 {
-                    _repositorioVeterinario.Editar(veterinario);
+                    _repositorioVeterinario.Editar(datos);
 
                     TempData["Mensaje"] =
                         "Veterinario actualizado correctamente.";
@@ -138,12 +134,12 @@ namespace Veterinaria.Controllers
                 }
                 catch (DbUpdateException)
                 {
-                    ModelState.AddModelError(
-                        "",
-                        "No se pudieron guardar los cambios. " +
-                        "Verifique los datos y la matrícula.");
+                    ModelState.AddModelError("",
+                        "No se pudieron guardar los cambios.");
                 }
             }
+
+            datos.Usuario = veterinario.Usuario;
 
             return View(datos);
         }
@@ -171,7 +167,7 @@ namespace Veterinaria.Controllers
             if (veterinario == null)
                 return NotFound();
 
-            if (!veterinario.Activo)
+            if (!veterinario.Usuario.Activo)
             {
                 TempData["Error"] =
                     "El veterinario ya está inactivo.";
@@ -187,18 +183,20 @@ namespace Veterinaria.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // Limpia espacios innecesarios
+        // Normalizar datos profesionales
         private static void NormalizarDatos(Veterinario veterinario)
         {
-            veterinario.Nombre = (veterinario.Nombre ?? "").Trim();
-            veterinario.Apellido = (veterinario.Apellido ?? "").Trim();
-            veterinario.Matricula = (veterinario.Matricula ?? "").Trim();
-            veterinario.Especialidad = (veterinario.Especialidad ?? "").Trim();
-            veterinario.Telefono = (veterinario.Telefono ?? "").Trim();
-            veterinario.Correo = (veterinario.Correo ?? "").Trim();
+            veterinario.Matricula =
+                (veterinario.Matricula ?? "").Trim();
+
+            veterinario.Especialidad =
+                (veterinario.Especialidad ?? "").Trim();
+
+            veterinario.Telefono =
+                (veterinario.Telefono ?? "").Trim();
         }
 
-        // Reglas adicionales de validación
+        // Validaciones profesionales
         private void ValidarDatos(
             Veterinario veterinario,
             int? idExcluir = null)
@@ -219,6 +217,56 @@ namespace Veterinaria.Controllers
                     nameof(Veterinario.Telefono),
                     "El teléfono debe contener al menos 7 dígitos.");
             }
+        }
+
+        // Validar que el usuario pueda ser veterinario
+        private void ValidarUsuario(int idUsuario)
+        {
+            var usuario = _repositorioUsuario.ObtenerPorId(idUsuario);
+
+            if (usuario == null ||
+                !usuario.Activo ||
+                usuario.Rol != "Veterinario")
+            {
+                ModelState.AddModelError(
+                    nameof(Veterinario.IdUsuario),
+                    "Seleccione un usuario activo con rol Veterinario.");
+
+                return;
+            }
+
+            bool asociado = _repositorioVeterinario
+                .ObtenerTodos()
+                .Any(v => v.IdUsuario == idUsuario);
+
+            if (asociado)
+            {
+                ModelState.AddModelError(
+                    nameof(Veterinario.IdUsuario),
+                    "Este usuario ya tiene una ficha de veterinario.");
+            }
+        }
+
+        // Usuarios disponibles para asociar
+        private void CargarUsuarios()
+        {
+            var asociados = _repositorioVeterinario
+                .ObtenerTodos()
+                .Select(v => v.IdUsuario)
+                .ToHashSet();
+
+            var usuarios = _repositorioUsuario
+                .ObtenerTodos()
+                .Where(u => u.Activo &&
+                            u.Rol == "Veterinario" &&
+                            !asociados.Contains(u.IdUsuario))
+                .OrderBy(u => u.Nombre)
+                .ToList();
+
+            ViewBag.Usuarios = new SelectList(
+                usuarios,
+                "IdUsuario",
+                "Nombre");
         }
     }
 }

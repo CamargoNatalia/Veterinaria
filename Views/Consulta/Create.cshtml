@@ -187,20 +187,43 @@ else
 
         <div class="card-body">
 
-            <div class="mb-3">
-                <label asp-for="IdVeterinario" class="form-label">
-                    Veterinario
-                </label>
+            @if (User.IsInRole("Veterinario"))
+            {
+                <!-- Veterinario autenticado -->
+                <div class="mb-3">
+                    <label class="form-label">
+                        Veterinario
+                    </label>
 
-                <select asp-for="IdVeterinario" asp-items="ViewBag.Veterinarios" class="form-select" required>
+                    <input type="text" class="form-control" value="@User.Identity?.Name" readonly />
 
-                    <option value="">
-                        -- Seleccione un veterinario --
-                    </option>
-                </select>
+                    <div class="form-text">
+                        El profesional responsable se asigna
+                        automáticamente según la sesión iniciada.
+                    </div>
 
-                <span asp-validation-for="IdVeterinario" class="text-danger"></span>
-            </div>
+                    <span asp-validation-for="IdVeterinario" class="text-danger"></span>
+                </div>
+            }
+            else
+            {
+                <!-- Administrador y Empleado -->
+                <div class="mb-3">
+                    <label asp-for="IdVeterinario" class="form-label">
+                        Veterinario
+                    </label>
+
+                    <select asp-for="IdVeterinario" asp-items="ViewBag.Veterinarios" class="form-select" required>
+
+                        <option value="">
+                            -- Seleccione un veterinario --
+                        </option>
+
+                    </select>
+
+                    <span asp-validation-for="IdVeterinario" class="text-danger"></span>
+                </div>
+            }
 
         </div>
     </div>

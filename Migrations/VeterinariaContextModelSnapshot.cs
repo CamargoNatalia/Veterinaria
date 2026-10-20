@@ -341,33 +341,18 @@ namespace Veterinaria.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("IdVeterinario"));
 
-                    b.Property<bool>("Activo")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<string>("Apellido")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<string>("Correo")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("varchar(150)");
-
                     b.Property<string>("Especialidad")
                         .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("varchar(150)");
 
+                    b.Property<int>("IdUsuario")
+                        .HasColumnType("int");
+
                     b.Property<string>("Matricula")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)");
-
-                    b.Property<string>("Nombre")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
 
                     b.Property<string>("Telefono")
                         .IsRequired()
@@ -375,6 +360,9 @@ namespace Veterinaria.Migrations
                         .HasColumnType("varchar(30)");
 
                     b.HasKey("IdVeterinario");
+
+                    b.HasIndex("IdUsuario")
+                        .IsUnique();
 
                     b.HasIndex("Matricula")
                         .IsUnique();
@@ -483,6 +471,17 @@ namespace Veterinaria.Migrations
                     b.Navigation("Usuario");
                 });
 
+            modelBuilder.Entity("Veterinaria.Models.Veterinario", b =>
+                {
+                    b.HasOne("Veterinaria.Models.Usuario", "Usuario")
+                        .WithOne("Veterinario")
+                        .HasForeignKey("Veterinaria.Models.Veterinario", "IdUsuario")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Usuario");
+                });
+
             modelBuilder.Entity("Veterinaria.Models.Cliente", b =>
                 {
                     b.Navigation("Mascotas");
@@ -515,6 +514,8 @@ namespace Veterinaria.Migrations
                     b.Navigation("Consultas");
 
                     b.Navigation("Turnos");
+
+                    b.Navigation("Veterinario");
                 });
 #pragma warning restore 612, 618
         }

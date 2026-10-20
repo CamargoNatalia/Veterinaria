@@ -1,4 +1,3 @@
-
 @model Veterinaria.Models.Usuario
 
 @{
@@ -38,8 +37,9 @@
 
                 <select asp-for="Rol" class="form-select">
                     <option value="">Seleccione un rol</option>
-                    <option value="Empleado">Empleado</option>
                     <option value="Administrador">Administrador</option>
+                    <option value="Empleado">Empleado</option>
+                    <option value="Veterinario">Veterinario</option>
                 </select>
 
                 <span asp-validation-for="Rol" class="text-danger"></span>

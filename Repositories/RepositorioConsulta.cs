@@ -21,6 +21,7 @@ namespace Veterinaria.Repositories
                 .Include(c => c.Mascota)
                 .Include(c => c.Usuario)
                 .Include(c => c.Veterinario)
+                .ThenInclude(v => v!.Usuario)
                 .OrderByDescending(c => c.FechaHora)
                 .ToList();
         }
@@ -31,6 +32,7 @@ namespace Veterinaria.Repositories
                 .Include(c => c.Mascota)
                 .Include(c => c.Usuario)
                 .Include(c => c.Veterinario)
+                .ThenInclude(v => v!.Usuario)
                 .Include(c => c.HistoriasClinicas)
                 .FirstOrDefault(c => c.IdConsulta == id);
         }

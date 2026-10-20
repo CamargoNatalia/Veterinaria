@@ -13,16 +13,21 @@
 
         <form asp-action="Create" method="post">
 
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            @Html.AntiForgeryToken()
 
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <!-- Fecha y hora -->
             <div class="form-group mb-3">
                 <label asp-for="FechaHora" class="control-label"></label>
 
-                <input asp-for="FechaHora" class="form-control" type="datetime-local" />
+                <input asp-for="FechaHora" class="form-control" type="datetime-local"
+                       asp-format="{0:yyyy-MM-ddTHH:mm}" />
 
                 <span asp-validation-for="FechaHora" class="text-danger"></span>
             </div>
 
+            <!-- Motivo -->
             <div class="form-group mb-3">
                 <label asp-for="Motivo" class="control-label"></label>
 
@@ -31,21 +36,21 @@
                 <span asp-validation-for="Motivo" class="text-danger"></span>
             </div>
 
+            <!-- Estado inicial -->
             <div class="form-group mb-3">
-                <label asp-for="Estado" class="control-label"></label>
+                <label class="control-label">
+                    Estado
+                </label>
 
-                <select asp-for="Estado" class="form-control">
+                <input type="text" value="Pendiente" class="form-control" readonly />
 
-                    <option value="Pendiente">Pendiente</option>
-                    <option value="Confirmado">Confirmado</option>
-                    <option value="Atendido">Atendido</option>
-                    <option value="Cancelado">Cancelado</option>
-
-                </select>
-
-                <span asp-validation-for="Estado" class="text-danger"></span>
+                <div class="form-text">
+                    El turno se registrará automáticamente
+                    como pendiente.
+                </div>
             </div>
 
+            <!-- Observaciones -->
             <div class="form-group mb-3">
                 <label asp-for="Observaciones" class="control-label"></label>
 
@@ -54,41 +59,28 @@
                 <span asp-validation-for="Observaciones" class="text-danger"></span>
             </div>
 
+            <!-- Mascota -->
             <div class="form-group mb-3">
                 <label asp-for="IdMascota" class="control-label">
                     Mascota
                 </label>
 
-                <select asp-for="IdMascota" class="form-control" asp-items="ViewBag.Mascotas">
+                <select asp-for="IdMascota" class="form-select" asp-items="ViewBag.Mascotas">
 
                     <option value="">
                         Seleccione una mascota
                     </option>
-
                 </select>
 
                 <span asp-validation-for="IdMascota" class="text-danger"></span>
             </div>
 
-            <div class="form-group mb-3">
-                <label asp-for="IdUsuario" class="control-label">
-                    Usuario
-                </label>
-
-                <select asp-for="IdUsuario" class="form-control" asp-items="ViewBag.Usuarios">
-
-                    <option value="">
-                        Seleccione un usuario
-                    </option>
-
-                </select>
-
-                <span asp-validation-for="IdUsuario" class="text-danger"></span>
-            </div>
-
+            <!-- Acciones -->
             <div class="form-group mt-3">
 
-                <input type="submit" value="Crear" class="btn btn-primary" />
+                <button type="submit" class="btn btn-primary">
+                    Crear Turno
+                </button>
 
                 <a asp-action="Index" class="btn btn-secondary">
                     Volver
@@ -102,37 +94,5 @@
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-        
-    }
-    
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-
-            // Recupera la mascota enviada desde Consulta
-            const parametros = new URLSearchParams(
-                window.location.search
-            );
-
-            const idMascota = parametros.get("idMascota");
-
-            const selector = document.getElementById("IdMascota");
-
-            if (idMascota && selector) {
-
-                const opcionExiste = Array.from(selector.options)
-                    .some(opcion => opcion.value === idMascota);
-
-                if (opcionExiste) {
-                    selector.value = idMascota;
-
-                    // Actualiza otros datos si el formulario los carga
-                    selector.dispatchEvent(
-                        new Event("change", { bubbles: true })
-                    );
-                }
-            }
-        });
-    </script>
+    <partial name="_ValidationScriptsPartial" />
 }

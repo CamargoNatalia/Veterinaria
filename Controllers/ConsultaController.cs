@@ -9,7 +9,7 @@ using Veterinaria.Models;
 
 namespace Veterinaria.Controllers
 {
-    [Authorize(Roles = "Administrador,Empleado")]
+    [Authorize(Roles = "Administrador,Empleado,Veterinario")]
     public class ConsultaController : Controller
     {
         private readonly IRepositorioConsulta _repositorioConsulta;
@@ -29,6 +29,7 @@ namespace Veterinaria.Controllers
             _context = context;
         }
 
+        // Listado de consultas y turnos pendientes
         public IActionResult Index()
         {
             var consultas = _repositorioConsulta.ObtenerTodos();
@@ -39,6 +40,7 @@ namespace Veterinaria.Controllers
             return View(consultas);
         }
 
+        // Detalles de la consulta
         public IActionResult Details(int id)
         {
             var consulta = _repositorioConsulta.ObtenerPorId(id);
@@ -88,7 +90,8 @@ namespace Veterinaria.Controllers
             });
         }
 
-        // Formulario de nueva consulta
+        // GET: Nueva consulta
+        [HttpGet]
         public IActionResult Create(int? idTurno)
         {
             var consulta = new Consulta
@@ -96,6 +99,23 @@ namespace Veterinaria.Controllers
                 FechaHora = DateTime.Now
             };
 
+            // Si ingresa un veterinario, identificar su ficha
+            if (User.IsInRole("Veterinario"))
+            {
+                var veterinario = ObtenerVeterinarioActual();
+
+                if (veterinario == null)
+                {
+                    TempData["Error"] =
+                        "No tiene una ficha profesional activa asociada.";
+
+                    return RedirectToAction(nameof(Index));
+                }
+
+                consulta.IdVeterinario = veterinario.IdVeterinario;
+            }
+
+            // Consulta originada desde un turno
             if (idTurno.HasValue)
             {
                 var turno = _repositorioTurno
@@ -128,7 +148,7 @@ namespace Veterinaria.Controllers
             return View(consulta);
         }
 
-        // Guardar consulta: normal o con atajo a nuevo turno
+        // POST: Registrar consulta
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Create(
@@ -142,14 +162,36 @@ namespace Veterinaria.Controllers
             if (!int.TryParse(idClaim, out int idUsuario))
                 return Unauthorized();
 
+            // Usuario que registra la atención
             consulta.IdUsuario = idUsuario;
 
+            // Si es Veterinario, ignorar el IdVeterinario
+            // recibido del formulario y obtenerlo de la sesión
+            if (User.IsInRole("Veterinario"))
+            {
+                var veterinario = ObtenerVeterinarioActual();
+
+                if (veterinario == null)
+                    return Forbid();
+
+                consulta.IdVeterinario = veterinario.IdVeterinario;
+            }
+
+            // Validar solamente los datos correspondientes
+            // al formulario
             ModelState.Remove(nameof(Consulta.IdUsuario));
             ModelState.Remove(nameof(Consulta.Usuario));
             ModelState.Remove(nameof(Consulta.Mascota));
             ModelState.Remove(nameof(Consulta.Turno));
             ModelState.Remove(nameof(Consulta.Veterinario));
 
+            if (User.IsInRole("Veterinario"))
+            {
+                ModelState.Remove(
+                    nameof(Consulta.IdVeterinario));
+            }
+
+            // Verificar mascota
             if (_repositorioMascota.ObtenerPorId(
                     consulta.IdMascota) == null)
             {
@@ -158,17 +200,20 @@ namespace Veterinaria.Controllers
                     "Seleccione una mascota válida.");
             }
 
+            // Verificar veterinario responsable
             if (!consulta.IdVeterinario.HasValue ||
                 !_context.Veterinarios.Any(v =>
                     v.IdVeterinario ==
                         consulta.IdVeterinario.Value &&
-                    v.Activo))
+                    v.Usuario.Activo &&
+                    v.Usuario.Rol == "Veterinario"))
             {
                 ModelState.AddModelError(
                     nameof(Consulta.IdVeterinario),
                     "Seleccione un veterinario activo.");
             }
 
+            // Verificar turno asociado
             if (consulta.IdTurno.HasValue)
             {
                 var turno = _repositorioTurno
@@ -204,24 +249,26 @@ namespace Veterinaria.Controllers
 
             if (ModelState.IsValid)
             {
-                bool guardado = false;
+                bool guardado;
 
                 if (consulta.IdTurno.HasValue)
                 {
-                    guardado =
-                        _repositorioConsulta.RegistrarAtencion(
+                    // Registra consulta y marca turno Atendido
+                    guardado = _repositorioConsulta
+                        .RegistrarAtencion(
                             consulta,
                             consulta.IdTurno.Value);
                 }
                 else
                 {
+                    // Consulta directa sin turno
                     _repositorioConsulta.Crear(consulta);
                     guardado = true;
                 }
 
                 if (guardado)
                 {
-                    // Segundo botón: guardar y abrir nuevo turno
+                    // Guardar y reservar próximo turno
                     if (accion == "reservarTurno")
                     {
                         TempData["Mensaje"] =
@@ -241,7 +288,8 @@ namespace Veterinaria.Controllers
 
                 ModelState.AddModelError(
                     "",
-                    "No se pudo registrar la atención. El turno ya no está disponible.");
+                    "No se pudo registrar la atención. " +
+                    "El turno ya no está disponible.");
             }
 
             CargarListas(
@@ -251,12 +299,19 @@ namespace Veterinaria.Controllers
             return View(consulta);
         }
 
+        // GET: Editar consulta
+        [HttpGet]
         public IActionResult Edit(int id)
         {
             var consulta = _repositorioConsulta.ObtenerPorId(id);
 
             if (consulta == null)
                 return NotFound();
+
+            // El veterinario solo puede editar
+            // sus propias consultas
+            if (!PuedeEditarConsulta(consulta))
+                return Forbid();
 
             CargarListas(
                 consulta.IdMascota,
@@ -265,6 +320,7 @@ namespace Veterinaria.Controllers
             return View(consulta);
         }
 
+        // POST: Editar consulta
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Edit(
@@ -280,12 +336,22 @@ namespace Veterinaria.Controllers
             if (consulta == null)
                 return NotFound();
 
+            if (!PuedeEditarConsulta(consulta))
+                return Forbid();
+
+            // Conservar los datos que no se editan
+            datos.IdUsuario = consulta.IdUsuario;
+            datos.IdTurno = consulta.IdTurno;
+            datos.IdVeterinario = consulta.IdVeterinario;
+
             ModelState.Remove(nameof(Consulta.IdUsuario));
             ModelState.Remove(nameof(Consulta.Usuario));
             ModelState.Remove(nameof(Consulta.Mascota));
             ModelState.Remove(nameof(Consulta.Turno));
             ModelState.Remove(nameof(Consulta.Veterinario));
+            ModelState.Remove(nameof(Consulta.IdVeterinario));
 
+            // Validar mascota
             if (_repositorioMascota.ObtenerPorId(
                     datos.IdMascota) == null)
             {
@@ -294,22 +360,14 @@ namespace Veterinaria.Controllers
                     "Seleccione una mascota válida.");
             }
 
+            // Si tiene turno asociado, no cambiar mascota
             if (consulta.IdTurno.HasValue &&
                 consulta.IdMascota != datos.IdMascota)
             {
                 ModelState.AddModelError(
                     nameof(Consulta.IdMascota),
-                    "No se puede cambiar la mascota de una consulta asociada a un turno.");
-            }
-
-            if (datos.IdVeterinario.HasValue &&
-                !_context.Veterinarios.Any(v =>
-                    v.IdVeterinario ==
-                        datos.IdVeterinario.Value))
-            {
-                ModelState.AddModelError(
-                    nameof(Consulta.IdVeterinario),
-                    "Seleccione un veterinario válido.");
+                    "No se puede cambiar la mascota de una " +
+                    "consulta asociada a un turno.");
             }
 
             if (ModelState.IsValid)
@@ -321,7 +379,7 @@ namespace Veterinaria.Controllers
                 consulta.Observaciones = datos.Observaciones;
                 consulta.IdMascota = datos.IdMascota;
 
-                // Conserva el veterinario que tenía asignado
+                // Conservar veterinario y usuario originales
                 _repositorioConsulta.Editar(consulta);
 
                 TempData["Mensaje"] =
@@ -330,6 +388,8 @@ namespace Veterinaria.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            datos.Veterinario = consulta.Veterinario;
+
             CargarListas(
                 datos.IdMascota,
                 datos.IdVeterinario);
@@ -337,6 +397,8 @@ namespace Veterinaria.Controllers
             return View(datos);
         }
 
+        // GET: Eliminar consulta
+        [HttpGet]
         [Authorize(Roles = "Administrador")]
         public IActionResult Delete(int id)
         {
@@ -348,6 +410,7 @@ namespace Veterinaria.Controllers
             return View(consulta);
         }
 
+        // POST: Eliminar consulta
         [HttpPost, ActionName("Delete")]
         [Authorize(Roles = "Administrador")]
         [ValidateAntiForgeryToken]
@@ -361,7 +424,8 @@ namespace Veterinaria.Controllers
             if (consulta.IdTurno.HasValue)
             {
                 TempData["Error"] =
-                    "No se puede eliminar una consulta asociada a un turno atendido.";
+                    "No se puede eliminar una consulta " +
+                    "asociada a un turno atendido.";
 
                 return RedirectToAction(nameof(Index));
             }
@@ -369,7 +433,8 @@ namespace Veterinaria.Controllers
             if (consulta.HistoriasClinicas.Any())
             {
                 TempData["Error"] =
-                    "No se puede eliminar una consulta con archivos clínicos asociados.";
+                    "No se puede eliminar una consulta " +
+                    "con archivos clínicos asociados.";
 
                 return RedirectToAction(nameof(Index));
             }
@@ -382,6 +447,37 @@ namespace Veterinaria.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // Obtener la ficha del veterinario autenticado
+        private Veterinario? ObtenerVeterinarioActual()
+        {
+            var idClaim = User.FindFirst(
+                ClaimTypes.NameIdentifier)?.Value;
+
+            if (!int.TryParse(idClaim, out int idUsuario))
+                return null;
+
+            return _context.Veterinarios
+                .AsNoTracking()
+                .FirstOrDefault(v =>
+                    v.IdUsuario == idUsuario &&
+                    v.Usuario.Activo &&
+                    v.Usuario.Rol == "Veterinario");
+        }
+
+        // Controlar quién puede editar una consulta
+        private bool PuedeEditarConsulta(Consulta consulta)
+        {
+            if (!User.IsInRole("Veterinario"))
+                return true;
+
+            var veterinario = ObtenerVeterinarioActual();
+
+            return veterinario != null &&
+                   consulta.IdVeterinario ==
+                       veterinario.IdVeterinario;
+        }
+
+        // Listas para los formularios
         private void CargarListas(
             int? idMascota = null,
             int? idVeterinario = null)
@@ -392,16 +488,18 @@ namespace Veterinaria.Controllers
                 "Nombre",
                 idMascota);
 
+            // Datos profesionales asociados a Usuario
             var veterinarios = _context.Veterinarios
-                .Where(v => v.Activo ||
+                .AsNoTracking()
+                .Where(v =>
+                    (v.Usuario.Activo &&
+                     v.Usuario.Rol == "Veterinario") ||
                     v.IdVeterinario == idVeterinario)
-                .OrderBy(v => v.Apellido)
-                .ThenBy(v => v.Nombre)
+                .OrderBy(v => v.Usuario.Nombre)
                 .Select(v => new
                 {
                     v.IdVeterinario,
-                    NombreCompleto =
-                        v.Apellido + ", " + v.Nombre
+                    NombreCompleto = v.Usuario.Nombre
                 })
                 .ToList();
 

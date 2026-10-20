@@ -41,5 +41,9 @@ namespace Veterinaria.Models
 
         public ICollection<Consulta> Consultas { get; set; }
             = new List<Consulta>();
+
+        // Relación opcional con Veterinario
+        public Veterinario? Veterinario { get; set; }
     }
+
 }

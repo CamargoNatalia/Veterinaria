@@ -42,6 +42,13 @@ namespace Veterinaria.Data
                 .HasIndex(v => v.Matricula)
                 .IsUnique();
 
+            // Relación 1:1 entre Usuario y Veterinario
+            modelBuilder.Entity<Veterinario>()
+                .HasOne(v => v.Usuario)
+                .WithOne(u => u.Veterinario)
+                .HasForeignKey<Veterinario>(v => v.IdUsuario)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // Un veterinario puede realizar muchas consultas
             modelBuilder.Entity<Consulta>()
                 .HasOne(c => c.Veterinario)
@@ -49,5 +56,6 @@ namespace Veterinaria.Data
                 .HasForeignKey(c => c.IdVeterinario)
                 .OnDelete(DeleteBehavior.Restrict);
         }
+
     }
 }

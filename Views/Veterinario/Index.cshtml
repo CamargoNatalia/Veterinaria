@@ -33,9 +33,10 @@
 
 <div class="table-responsive">
     <table class="table table-striped table-bordered align-middle">
+
         <thead class="table-dark">
             <tr>
-                <th>Nombre y Apellido</th>
+                <th>Nombre completo</th>
                 <th>Matrícula</th>
                 <th>Especialidad</th>
                 <th>Teléfono</th>
@@ -50,25 +51,21 @@
             {
                 <tr>
                     <td>
-                        @veterinario.Apellido, @veterinario.Nombre
+                        @(veterinario.Usuario?.Nombre ?? "Sin usuario")
                     </td>
 
                     <td>@veterinario.Matricula</td>
 
+                    <td>@veterinario.Especialidad</td>
+
+                    <td>@veterinario.Telefono</td>
+
                     <td>
-                        @(veterinario.Especialidad ?? "No registrada")
+                        @(veterinario.Usuario?.Email ?? "-")
                     </td>
 
                     <td>
-                        @(veterinario.Telefono ?? "-")
-                    </td>
-
-                    <td>
-                        @(veterinario.Correo ?? "-")
-                    </td>
-
-                    <td>
-                        @if (veterinario.Activo)
+                        @if (veterinario.Usuario?.Activo == true)
                         {
                             <span class="badge bg-success">
                                 Activo
@@ -95,7 +92,7 @@
                                     Editar
                                 </a>
 
-                                @if (veterinario.Activo)
+                                @if (veterinario.Usuario?.Activo == true)
                                 {
                                     <a asp-action="Delete" asp-route-id="@veterinario.IdVeterinario" class="btn btn-danger btn-sm">
                                         Desactivar

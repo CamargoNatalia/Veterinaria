@@ -1,12 +1,14 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using Veterinaria.Data;
 using Veterinaria.Interfaces;
 using Veterinaria.Models;
 
 namespace Veterinaria.Controllers
 {
-    [Authorize(Roles = "Administrador,Empleado")]
+    [Authorize(Roles = "Administrador,Empleado,Veterinario")]
     public class HClinicaController : Controller
     {
         private readonly IRepositorioHClinica _repositorioHClinica;
@@ -23,21 +25,26 @@ namespace Veterinaria.Controllers
             _environment = environment;
         }
 
-        // Formulario para adjuntar un archivo a una consulta
+        // Formulario para adjuntar un archivo clínico
         [HttpGet]
         public IActionResult Create(int idConsulta)
         {
-            var consulta = _context.Consultas.Find(idConsulta);
+            var consulta = _context.Consultas
+                .AsNoTracking()
+                .FirstOrDefault(c => c.IdConsulta == idConsulta);
 
             if (consulta == null)
                 return NotFound();
+
+            if (!PuedeAdjuntar(consulta))
+                return Forbid();
 
             ViewBag.IdConsulta = idConsulta;
 
             return View();
         }
 
-        // Guarda el documento y registra sus datos
+        // Guardar archivo clínico
         [HttpPost]
         [ValidateAntiForgeryToken]
         [RequestSizeLimit(10 * 1024 * 1024)]
@@ -46,12 +53,20 @@ namespace Veterinaria.Controllers
             IFormFile? archivo,
             string? descripcion)
         {
-            if (!_context.Consultas.Any(c =>
-                    c.IdConsulta == idConsulta))
+            var consulta = _context.Consultas
+                .AsNoTracking()
+                .FirstOrDefault(c => c.IdConsulta == idConsulta);
+
+            if (consulta == null)
                 return NotFound();
+
+            // El veterinario solo adjunta en sus consultas
+            if (!PuedeAdjuntar(consulta))
+                return Forbid();
 
             ViewBag.IdConsulta = idConsulta;
 
+            // Validar archivo
             if (archivo == null || archivo.Length == 0)
             {
                 ModelState.AddModelError(
@@ -88,6 +103,21 @@ namespace Veterinaria.Controllers
                         "archivo",
                         "El nombre del archivo es demasiado largo.");
                 }
+
+                // Verificar contenido real del archivo
+                if (ModelState.IsValid)
+                {
+                    bool archivoValido =
+                        await ValidarContenidoArchivo(archivo);
+
+                    if (!archivoValido)
+                    {
+                        ModelState.AddModelError(
+                            "archivo",
+                            "El contenido no corresponde a un " +
+                            "PDF o imagen permitida.");
+                    }
+                }
             }
 
             if (descripcion?.Length > 1000)
@@ -109,6 +139,7 @@ namespace Veterinaria.Controllers
             string nombreGuardado =
                 Guid.NewGuid().ToString("N") + extensionArchivo;
 
+            // Guardar fuera de wwwroot
             string carpeta = Path.Combine(
                 _environment.ContentRootPath,
                 "ArchivosClinicos");
@@ -133,7 +164,7 @@ namespace Veterinaria.Controllers
                     CarpetaDescarga = nombreGuardado,
                     FormatoArchivo = extensionArchivo,
                     CargaArchivo = DateTime.Now,
-                    Descripcion = descripcion
+                    Descripcion = descripcion?.Trim()
                 };
 
                 _repositorioHClinica.Crear(historiaClinica);
@@ -159,7 +190,7 @@ namespace Veterinaria.Controllers
                 new { id = idConsulta });
         }
 
-        // Abre el archivo en el navegador
+        // Visualizar archivo clínico
         [HttpGet]
         public IActionResult Ver(int id)
         {
@@ -178,7 +209,6 @@ namespace Veterinaria.Controllers
             string tipoContenido = ObtenerTipoContenido(
                 historiaClinica.FormatoArchivo);
 
-            // Evita que el navegador interprete tipos no permitidos
             if (tipoContenido == "application/octet-stream")
                 return BadRequest("Formato no permitido.");
 
@@ -188,7 +218,7 @@ namespace Veterinaria.Controllers
             return PhysicalFile(ruta, tipoContenido);
         }
 
-        // Descarga el documento con su nombre original
+        // Descargar archivo clínico
         [HttpGet]
         public IActionResult Descargar(int id)
         {
@@ -221,13 +251,77 @@ namespace Veterinaria.Controllers
                 nombreDescarga);
         }
 
-        // Resuelve la ubicación dentro de ArchivosClinicos
+        // Comprobar permisos de carga
+        private bool PuedeAdjuntar(Consulta consulta)
+        {
+            if (User.IsInRole("Administrador") ||
+                User.IsInRole("Empleado"))
+                return true;
+
+            if (!User.IsInRole("Veterinario"))
+                return false;
+
+            var idClaim = User.FindFirst(
+                ClaimTypes.NameIdentifier)?.Value;
+
+            if (!int.TryParse(idClaim, out int idUsuario))
+                return false;
+
+            return _context.Veterinarios.Any(v =>
+                v.IdUsuario == idUsuario &&
+                v.Usuario.Activo &&
+                v.Usuario.Rol == "Veterinario" &&
+                consulta.IdVeterinario == v.IdVeterinario);
+        }
+
+        // Verificar firma básica del archivo
+        private static async Task<bool> ValidarContenidoArchivo(
+            IFormFile archivo)
+        {
+            string extension = Path.GetExtension(
+                archivo.FileName).ToLowerInvariant();
+
+            byte[] firma = new byte[12];
+
+            using var stream = archivo.OpenReadStream();
+
+            int leidos = await stream.ReadAsync(
+                firma.AsMemory());
+
+            if (leidos < 12)
+                return false;
+
+            return extension switch
+            {
+                ".pdf" =>
+                    firma[0] == 0x25 &&
+                    firma[1] == 0x50 &&
+                    firma[2] == 0x44 &&
+                    firma[3] == 0x46 &&
+                    firma[4] == 0x2D,
+
+                ".jpg" or ".jpeg" =>
+                    firma[0] == 0xFF &&
+                    firma[1] == 0xD8 &&
+                    firma[2] == 0xFF,
+
+                ".png" =>
+                    firma.Take(8).SequenceEqual(
+                        new byte[]
+                        {
+                            137, 80, 78, 71, 13, 10, 26, 10
+                        }),
+
+                _ => false
+            };
+        }
+
+        // Resolver ubicación física del archivo
         private string? ObtenerRutaArchivo(string nombreGuardado)
         {
             if (string.IsNullOrWhiteSpace(nombreGuardado))
                 return null;
 
-            // Solo admitimos un nombre físico, nunca una ruta externa
             if (nombreGuardado != Path.GetFileName(nombreGuardado)
                 || nombreGuardado.Contains('\\')
                 || nombreGuardado.Contains('/')
@@ -252,7 +346,7 @@ namespace Veterinaria.Controllers
             return ruta;
         }
 
-        // Tipos admitidos para visualización y descarga
+        // Tipos admitidos
         private string ObtenerTipoContenido(string? formato)
         {
             return formato?.ToLowerInvariant() switch

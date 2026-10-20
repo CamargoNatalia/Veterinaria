@@ -1,86 +1,146 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Veterinaria </title>
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0" />
+
+    <title>@ViewData["Title"] - Veterinaria</title>
+
     <script type="importmap"></script>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/PruebaVete .styles.css" asp-append-version="true" />
+
+    <link rel="stylesheet"
+          href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+
+    <link rel="stylesheet"
+          href="~/css/site.css"
+          asp-append-version="true" />
+
+    <link rel="stylesheet"
+          href="~/Veterinaria.styles.css"
+          asp-append-version="true" />
 </head>
 
 <body>
+
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm
+                    navbar-light bg-white border-bottom box-shadow mb-3">
+
             <div class="container-fluid">
 
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
+                <!-- Nombre del sistema -->
+                <a class="navbar-brand"
+                   asp-controller="Home"
+                   asp-action="Index">
                     Veterinaria
                 </a>
 
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
-                        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <!-- Menú responsive -->
+                <button class="navbar-toggler"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#navbarPrincipal"
+                        aria-controls="navbarPrincipal"
+                        aria-expanded="false"
+                        aria-label="Mostrar menú">
+
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                <div id="navbarPrincipal"
+                     class="navbar-collapse collapse
+                            d-sm-inline-flex justify-content-between">
 
+                    <!-- MENÚ PRINCIPAL -->
                     <ul class="navbar-nav flex-grow-1">
 
-                        @if (User.IsInRole("Administrador") || User.IsInRole("Empleado"))
+                        <!-- Clientes y Mascotas -->
+                        @if (User.IsInRole("Administrador") ||
+                             User.IsInRole("Empleado") ||
+                             User.IsInRole("Veterinario"))
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Cliente" asp-action="Index">
+                                <a class="nav-link text-dark"
+                                   asp-controller="Cliente"
+                                   asp-action="Index">
                                     Clientes
                                 </a>
                             </li>
 
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Mascota" asp-action="Index">
+                                <a class="nav-link text-dark"
+                                   asp-controller="Mascota"
+                                   asp-action="Index">
                                     Mascotas
                                 </a>
                             </li>
+                        }
 
+                        <!-- Especies y Razas -->
+                        @if (User.IsInRole("Administrador") ||
+                             User.IsInRole("Empleado"))
+                        {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Especie" asp-action="Index">
+                                <a class="nav-link text-dark"
+                                   asp-controller="Especie"
+                                   asp-action="Index">
                                     Especies
                                 </a>
                             </li>
 
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Raza" asp-action="Index">
+                                <a class="nav-link text-dark"
+                                   asp-controller="Raza"
+                                   asp-action="Index">
                                     Razas
                                 </a>
                             </li>
+                        }
 
+                        <!-- Turnos y Consultas -->
+                        @if (User.IsInRole("Administrador") ||
+                             User.IsInRole("Empleado") ||
+                             User.IsInRole("Veterinario"))
+                        {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Turno" asp-action="Index">
+                                <a class="nav-link text-dark"
+                                   asp-controller="Turno"
+                                   asp-action="Index">
                                     Turnos
                                 </a>
                             </li>
 
-                            
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Consulta" asp-action="Index">
+                                <a class="nav-link text-dark"
+                                   asp-controller="Consulta"
+                                   asp-action="Index">
                                     Consultas
                                 </a>
                             </li>
+                        }
 
-                        
+                        <!-- Gestión de Veterinarios -->
+                        @if (User.IsInRole("Administrador") ||
+                             User.IsInRole("Empleado"))
+                        {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Veterinario" asp-action="Index">
+                                <a class="nav-link text-dark"
+                                   asp-controller="Veterinario"
+                                   asp-action="Index">
                                     Veterinarios
                                 </a>
                             </li>
-                        
                         }
 
+                        <!-- Administración de Usuarios -->
                         @if (User.IsInRole("Administrador"))
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Usuario" asp-action="Index">
+                                <a class="nav-link text-dark"
+                                   asp-controller="Usuario"
+                                   asp-action="Index">
                                     Usuarios
                                 </a>
                             </li>
@@ -88,50 +148,83 @@
 
                     </ul>
 
+                    <!-- USUARIO AUTENTICADO -->
                     <ul class="navbar-nav align-items-center">
 
                         @if (User.Identity?.IsAuthenticated == true)
                         {
-                            var avatarUsuario = User.FindFirst("Avatar")?.Value;
-                            var rolUsuario = User.FindFirst(
-                                System.Security.Claims.ClaimTypes.Role
-                            )?.Value;
+                            var avatarUsuario =
+                                User.FindFirst("Avatar")?.Value;
 
+                            var rolUsuario =
+                                User.FindFirst(
+                                    System.Security.Claims.ClaimTypes.Role
+                                )?.Value;
+
+                            var nombreUsuario =
+                                User.Identity?.Name ?? "Usuario";
+
+                            var inicialUsuario =
+                                nombreUsuario.Length > 0
+                                    ? nombreUsuario.Substring(0, 1).ToUpper()
+                                    : "U";
+
+                            <!-- Mi Perfil -->
                             <li class="nav-item">
-                                <div class="nav-link text-dark d-flex align-items-center gap-2">
-                                    <li class="nav-item">
-                                        <a class="nav-link text-dark" asp-controller="Usuario" asp-action="Perfil">
-                                            Mi Perfil
-                                        </a>
-                                    </li>
+                                <a class="nav-link text-dark"
+                                   asp-controller="Usuario"
+                                   asp-action="Perfil">
+                                    Mi Perfil
+                                </a>
+                            </li>
+
+                            <!-- Avatar, nombre y rol -->
+                            <li class="nav-item">
+                                <div class="nav-link text-dark
+                                            d-flex align-items-center gap-2">
+
                                     @if (!string.IsNullOrWhiteSpace(avatarUsuario))
                                     {
-                                        
-                                       
-
-                                        <img src="@avatarUsuario" alt="Avatar" class="rounded-circle border"
-                                             style="width:36px;height:36px;object-fit:cover;" />
+                                        <img src="@avatarUsuario"
+                                             alt="Avatar del usuario"
+                                             class="rounded-circle border"
+                                             style="width:36px;
+                                                    height:36px;
+                                                    object-fit:cover;" />
                                     }
                                     else
                                     {
-                                        <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center"
-                                             style="width:36px;height:36px;font-weight:bold;">
-                                            @(User.Identity?.Name?.Substring(0, 1).ToUpper() ?? "U")
+                                        <div class="rounded-circle bg-secondary
+                                                    text-white d-flex
+                                                    align-items-center
+                                                    justify-content-center"
+                                             style="width:36px;
+                                                    height:36px;
+                                                    font-weight:bold;">
+
+                                            @inicialUsuario
+
                                         </div>
                                     }
 
                                     <span>
-                                        Hola, @User.Identity?.Name (@rolUsuario)
+                                        Hola, @nombreUsuario (@rolUsuario)
                                     </span>
 
                                 </div>
                             </li>
 
+                            <!-- Cerrar sesión -->
                             <li class="nav-item">
-                                <form asp-controller="Usuario" asp-action="Logout" method="post">
+                                <form asp-controller="Usuario"
+                                      asp-action="Logout"
+                                      method="post">
+
                                     @Html.AntiForgeryToken()
 
-                                    <button type="submit" class="btn btn-link nav-link text-dark">
+                                    <button type="submit"
+                                            class="btn btn-link
+                                                   nav-link text-dark">
                                         Cerrar sesión
                                     </button>
                                 </form>
@@ -139,8 +232,11 @@
                         }
                         else
                         {
+                            <!-- Iniciar sesión -->
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Usuario" asp-action="Login">
+                                <a class="nav-link text-dark"
+                                   asp-controller="Usuario"
+                                   asp-action="Login">
                                     Iniciar sesión
                                 </a>
                             </li>
@@ -153,27 +249,34 @@
         </nav>
     </header>
 
+    <!-- CONTENIDO PRINCIPAL -->
     <div class="container">
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
     </div>
 
+    <!-- PIE DE PÁGINA -->
     <footer class="border-top footer text-muted">
         <div class="container">
             &copy; 2026 - Veterinaria -
-            <a asp-area="" asp-controller="Home" asp-action="Privacy">
+
+            <a asp-controller="Home"
+               asp-action="Privacy">
                 Privacy
             </a>
         </div>
     </footer>
 
+    <!-- SCRIPTS -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
+
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <script src="~/js/site.js"
+            asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
 
 </body>
-
 </html>

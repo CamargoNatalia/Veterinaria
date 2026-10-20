@@ -12,8 +12,9 @@
     ¿Está seguro de que desea desactivar este veterinario?
 
     <p class="mb-0 mt-2">
-        El registro permanecerá en la base de datos
-        y podrá reactivarse posteriormente.
+        El registro permanecerá en la base de datos.
+        La cuenta del usuario quedará inactiva y
+        podrá reactivarse posteriormente.
     </p>
 </div>
 
@@ -21,9 +22,14 @@
     <div class="card-body">
         <dl class="row">
 
-            <dt class="col-sm-3">Nombre</dt>
+            <dt class="col-sm-3">Nombre completo</dt>
             <dd class="col-sm-9">
-                @Model.Nombre @Model.Apellido
+                @(Model.Usuario?.Nombre ?? "Sin usuario asociado")
+            </dd>
+
+            <dt class="col-sm-3">Correo electrónico</dt>
+            <dd class="col-sm-9">
+                @(Model.Usuario?.Email ?? "-")
             </dd>
 
             <dt class="col-sm-3">Matrícula</dt>
@@ -31,12 +37,12 @@
 
             <dt class="col-sm-3">Especialidad</dt>
             <dd class="col-sm-9">
-                @(Model.Especialidad ?? "No registrada")
+                @Model.Especialidad
             </dd>
 
             <dt class="col-sm-3">Estado</dt>
             <dd class="col-sm-9">
-                @(Model.Activo ? "Activo" : "Inactivo")
+                @(Model.Usuario?.Activo == true ? "Activo" : "Inactivo")
             </dd>
 
         </dl>

@@ -11,70 +11,82 @@
 <div class="row">
     <div class="col-md-6">
 
-        <form asp-action="Edit">
+        <form asp-action="Edit" asp-route-id="@Model.IdTurno" method="post">
 
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            @Html.AntiForgeryToken()
 
             <input type="hidden" asp-for="IdTurno" />
 
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <!-- Fecha y hora -->
             <div class="form-group mb-3">
                 <label asp-for="FechaHora" class="control-label"></label>
-                <input asp-for="FechaHora" class="form-control" type="datetime-local" />
+
+                <input asp-for="FechaHora" class="form-control" type="datetime-local"
+                       asp-format="{0:yyyy-MM-ddTHH:mm}" />
+
                 <span asp-validation-for="FechaHora" class="text-danger"></span>
             </div>
 
+            <!-- Motivo -->
             <div class="form-group mb-3">
                 <label asp-for="Motivo" class="control-label"></label>
+
                 <textarea asp-for="Motivo" class="form-control"></textarea>
+
                 <span asp-validation-for="Motivo" class="text-danger"></span>
             </div>
 
+            <!-- Estado actual -->
             <div class="form-group mb-3">
-                <label asp-for="Estado" class="control-label"></label>
+                <label class="control-label">
+                    Estado
+                </label>
 
-                <select asp-for="Estado" class="form-control">
-                    <option value="Pendiente">Pendiente</option>
-                    <option value="Confirmado">Confirmado</option>
-                    <option value="Atendido">Atendido</option>
-                    <option value="Cancelado">Cancelado</option>
-                </select>
+                <input type="text" value="@Model.Estado" class="form-control" readonly />
 
-                <span asp-validation-for="Estado" class="text-danger"></span>
+                <div class="form-text">
+                    El estado se conserva al editar el turno.
+                </div>
             </div>
 
+            <!-- Observaciones -->
             <div class="form-group mb-3">
                 <label asp-for="Observaciones" class="control-label"></label>
+
                 <textarea asp-for="Observaciones" class="form-control"></textarea>
+
                 <span asp-validation-for="Observaciones" class="text-danger"></span>
             </div>
 
+            <!-- Mascota -->
             <div class="form-group mb-3">
-                <label asp-for="IdMascota" class="control-label">Mascota</label>
+                <label asp-for="IdMascota" class="control-label">
+                    Mascota
+                </label>
 
-                <select asp-for="IdMascota"
-                        class="form-control"
-                        asp-items="ViewBag.Mascotas">
-                    <option value="">Seleccione una mascota</option>
+                <select asp-for="IdMascota" class="form-select" asp-items="ViewBag.Mascotas">
+
+                    <option value="">
+                        Seleccione una mascota
+                    </option>
                 </select>
 
                 <span asp-validation-for="IdMascota" class="text-danger"></span>
             </div>
 
-            <div class="form-group mb-3">
-                <label asp-for="IdUsuario" class="control-label">Usuario</label>
+            <!-- Acciones -->
+            <div class="form-group mt-3">
 
-                <select asp-for="IdUsuario"
-                        class="form-control"
-                        asp-items="ViewBag.Usuarios">
-                    <option value="">Seleccione un usuario</option>
-                </select>
+                <button type="submit" class="btn btn-primary">
+                    Guardar Cambios
+                </button>
 
-                <span asp-validation-for="IdUsuario" class="text-danger"></span>
-            </div>
+                <a asp-action="Index" class="btn btn-secondary">
+                    Volver
+                </a>
 
-            <div class="form-group">
-                <input type="submit" value="Guardar cambios" class="btn btn-primary" />
-                <a asp-action="Index" class="btn btn-secondary">Volver</a>
             </div>
 
         </form>
@@ -83,7 +95,5 @@
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    <partial name="_ValidationScriptsPartial" />
 }
