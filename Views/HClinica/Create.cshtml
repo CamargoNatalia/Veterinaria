@@ -1,0 +1,61 @@
+@{
+    ViewData["Title"] = "Adjuntar Archivo Clínico";
+    int idConsulta = ViewBag.IdConsulta;
+}
+
+<h1>Adjuntar Archivo Clínico</h1>
+
+<hr />
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            Consulta N° @idConsulta
+        </h5>
+    </div>
+
+    <div class="card-body">
+        <form asp-controller="HClinica" asp-action="Create" method="post" enctype="multipart/form-data">
+
+            @Html.AntiForgeryToken()
+
+            <input type="hidden" name="idConsulta" value="@idConsulta" />
+
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="mb-3">
+                <label for="archivo" class="form-label">
+                    Archivo clínico
+                </label>
+
+                <input type="file" name="archivo" id="archivo" class="form-control" accept=".pdf,.jpg,.jpeg,.png"
+                       required />
+
+                @Html.ValidationMessage(
+                    "archivo", null,
+                    new { @class = "text-danger" })
+
+                <div class="form-text">
+                    Formatos: PDF, JPG, JPEG o PNG.
+                    Tamaño máximo: 10 MB.
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="descripcion" class="form-label">
+                    Descripción
+                </label>
+
+                <textarea name="descripcion" id="descripcion" class="form-control" rows="3" maxlength="1000"></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                Guardar Archivo
+            </button>
+
+            <a asp-controller="Consulta" asp-action="Details" asp-route-id="@idConsulta" class="btn btn-secondary">
+                Cancelar
+            </a>
+        </form>
+    </div>
+</div>

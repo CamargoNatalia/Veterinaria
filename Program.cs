@@ -26,6 +26,8 @@ builder.Services.AddScoped<IRepositorioRaza, RepositorioRaza>();
 builder.Services.AddScoped<IRepositorioUsuario, RepositorioUsuario>();
 builder.Services.AddScoped<IRepositorioConsulta, RepositorioConsulta>();
 builder.Services.AddScoped<IRepositorioVeterinario, RepositorioVeterinario>();
+builder.Services.AddScoped<IRepositorioHClinica, RepositorioHClinica>();
+
 
 // Autenticación
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
