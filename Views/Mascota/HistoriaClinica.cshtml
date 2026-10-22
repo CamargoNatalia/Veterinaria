@@ -1,0 +1,229 @@
+
+@model Veterinaria.Models.Mascota
+
+@{
+    ViewData["Title"] = "Historia Clínica";
+}
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Historia Clínica</h2>
+
+        <a asp-controller="Mascota"
+           asp-action="Index"
+           class="btn btn-secondary">
+            Volver a Mascotas
+        </a>
+    </div>
+
+    <!-- DATOS DE LA MASCOTA -->
+    <div class="card shadow-sm mb-4">
+
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Datos de la Mascota</h5>
+        </div>
+
+        <div class="card-body">
+            <div class="row">
+
+                <div class="col-md-6">
+                    <p>
+                        <strong>Nombre:</strong>
+                        @Model.Nombre
+                    </p>
+
+                    <p>
+                        <strong>Especie:</strong>
+                        @(Model.Especie?.Nombre ?? "Sin especificar")
+                    </p>
+
+                    <p>
+                        <strong>Raza:</strong>
+                        @(Model.Raza?.Nombre ?? "Sin especificar")
+                    </p>
+
+                    <p>
+                        <strong>Sexo:</strong>
+                        @(Model.Sexo ?? "Sin especificar")
+                    </p>
+                </div>
+
+                <div class="col-md-6">
+                    <p>
+                        <strong>Propietario:</strong>
+                        @Model.Cliente?.Nombre @Model.Cliente?.Apellido
+                    </p>
+
+                    <p>
+                        <strong>Fecha de nacimiento:</strong>
+                        @(Model.FechaNacimiento?.ToString("dd/MM/yyyy")
+                            ?? "Sin especificar")
+                    </p>
+
+                    <p>
+                        <strong>Peso:</strong>
+                        @(Model.Peso.HasValue
+                            ? Model.Peso.Value.ToString("0.##") + " kg"
+                            : "Sin registrar")
+                    </p>
+
+                    <p>
+                        <strong>Total de consultas:</strong>
+                        @Model.Consultas.Count
+                    </p>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Model.Observaciones))
+            {
+                <p>
+                    <strong>Observaciones generales:</strong>
+                    @Model.Observaciones
+                </p>
+            }
+        </div>
+    </div>
+
+    <!-- HISTORIAL DE ATENCIONES -->
+    <h4 class="mb-3">Historial de Atenciones</h4>
+
+    @if (!Model.Consultas.Any())
+    {
+        <div class="alert alert-info">
+            Esta mascota todavía no tiene consultas registradas.
+        </div>
+    }
+    else
+    {
+        @foreach (var consulta in Model.Consultas)
+        {
+            var veterinario = consulta.Veterinario;
+
+            var nombreVeterinario =
+                veterinario?.Usuario?.Nombre ?? "No asignado";
+
+            <div class="card shadow-sm mb-3">
+
+                <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between flex-wrap gap-2">
+
+                        <strong>
+                            Consulta N.º @consulta.IdConsulta
+                        </strong>
+
+                        <span>
+                            @consulta.FechaHora.ToString("dd/MM/yyyy HH:mm")
+                        </span>
+                    </div>
+                </div>
+
+                <div class="card-body">
+
+                    <p>
+                        <strong>Veterinario responsable:</strong>
+                        @nombreVeterinario
+                    </p>
+
+                    @if (veterinario != null)
+                    {
+                        <p>
+                            <strong>Matrícula:</strong>
+                            @veterinario.Matricula
+                        </p>
+                    }
+
+                    <p>
+                        <strong>Motivo:</strong>
+                        @(consulta.Motivo ?? "Sin registrar")
+                    </p>
+
+                    <p>
+                        <strong>Diagnóstico:</strong>
+                        @(consulta.Diagnostico ?? "Sin registrar")
+                    </p>
+
+                    <p>
+                        <strong>Tratamiento:</strong>
+                        @(consulta.Tratamiento ?? "Sin registrar")
+                    </p>
+
+                    <p>
+                        <strong>Observaciones:</strong>
+                        @(consulta.Observaciones ?? "Sin registrar")
+                    </p>
+
+                    <!-- DOCUMENTOS CLÍNICOS -->
+                    <hr />
+
+                    <h6>Documentos Clínicos</h6>
+
+                    @if (consulta.HistoriasClinicas.Any())
+                    {
+                        <ul class="list-group">
+
+                            @foreach (var archivo in consulta.HistoriasClinicas)
+                            {
+                                <li class="list-group-item">
+
+                                    <div class="d-flex justify-content-between
+                                                align-items-center flex-wrap gap-2">
+
+                                        <div>
+                                            <strong>
+                                                @archivo.NombreArchivo
+                                            </strong>
+
+                                            @if (!string.IsNullOrWhiteSpace(
+                                                archivo.Descripcion))
+                                            {
+                                                <div class="text-muted small">
+                                                    @archivo.Descripcion
+                                                </div>
+                                            }
+
+                                            <div class="text-muted small">
+                                                Cargado:
+                                                @archivo.CargaArchivo.ToString("dd/MM/yyyy")
+                                            </div>
+                                        </div>
+
+                                        <div class="d-flex gap-2">
+
+                                            <a asp-controller="HClinica"
+                                               asp-action="Ver"
+                                               asp-route-id="@archivo.IdHClinica"
+                                               target="_blank"
+                                               rel="noopener noreferrer"
+                                               class="btn btn-info btn-sm">
+                                                Ver
+                                            </a>
+
+                                            <a asp-controller="HClinica"
+                                               asp-action="Descargar"
+                                               asp-route-id="@archivo.IdHClinica"
+                                               class="btn btn-success btn-sm">
+                                                Descargar
+                                            </a>
+
+                                        </div>
+                                    </div>
+
+                                </li>
+                            }
+
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="text-muted">
+                            No hay archivos adjuntos.
+                        </p>
+                    }
+
+                </div>
+            </div>
+        }
+    }
+
+</div>

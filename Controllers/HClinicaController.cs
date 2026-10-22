@@ -1,3 +1,4 @@
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -60,13 +61,11 @@ namespace Veterinaria.Controllers
             if (consulta == null)
                 return NotFound();
 
-            // El veterinario solo adjunta en sus consultas
             if (!PuedeAdjuntar(consulta))
                 return Forbid();
 
             ViewBag.IdConsulta = idConsulta;
 
-            // Validar archivo
             if (archivo == null || archivo.Length == 0)
             {
                 ModelState.AddModelError(
@@ -104,7 +103,6 @@ namespace Veterinaria.Controllers
                         "El nombre del archivo es demasiado largo.");
                 }
 
-                // Verificar contenido real del archivo
                 if (ModelState.IsValid)
                 {
                     bool archivoValido =
@@ -139,7 +137,6 @@ namespace Veterinaria.Controllers
             string nombreGuardado =
                 Guid.NewGuid().ToString("N") + extensionArchivo;
 
-            // Guardar fuera de wwwroot
             string carpeta = Path.Combine(
                 _environment.ContentRootPath,
                 "ArchivosClinicos");
@@ -190,7 +187,7 @@ namespace Veterinaria.Controllers
                 new { id = idConsulta });
         }
 
-        // Visualizar archivo clínico
+        // Visualizar PDF o imagen en el navegador
         [HttpGet]
         public IActionResult Ver(int id)
         {
@@ -214,11 +211,18 @@ namespace Veterinaria.Controllers
 
             Response.Headers["Content-Disposition"] = "inline";
             Response.Headers["X-Content-Type-Options"] = "nosniff";
+            Response.Headers["Cache-Control"] = "no-store";
 
-            return PhysicalFile(ruta, tipoContenido);
+            var stream = new FileStream(
+                ruta,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read);
+
+            return File(stream, tipoContenido);
         }
 
-        // Descargar archivo clínico
+        // Descargar documento clínico
         [HttpGet]
         public IActionResult Descargar(int id)
         {
@@ -346,7 +350,7 @@ namespace Veterinaria.Controllers
             return ruta;
         }
 
-        // Tipos admitidos
+        // Tipos de archivo permitidos
         private string ObtenerTipoContenido(string? formato)
         {
             return formato?.ToLowerInvariant() switch

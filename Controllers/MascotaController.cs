@@ -1,6 +1,8 @@
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 using Veterinaria.Interfaces;
 using Veterinaria.Data;
 using Veterinaria.Models;
@@ -25,16 +27,13 @@ namespace Veterinaria.Controllers
         }
 
         // Listado de mascotas
-        // Acceso: Administrador, Empleado y Veterinario
         public IActionResult Index()
         {
             var mascotas = _repositorioMascota.ObtenerTodos();
-
             return View(mascotas);
         }
 
         // Detalles de una mascota
-        // Acceso: Administrador, Empleado y Veterinario
         public IActionResult Details(int id)
         {
             var mascota = _repositorioMascota.ObtenerPorId(id);
@@ -45,13 +44,41 @@ namespace Veterinaria.Controllers
             return View(mascota);
         }
 
+        // HISTORIA CLÍNICA POR MASCOTA
+        [HttpGet]
+        public async Task<IActionResult> HistoriaClinica(int id)
+        {
+            var mascota = await _context.Mascotas
+                .AsNoTracking()
+                .Include(m => m.Cliente)
+                .Include(m => m.Especie)
+                .Include(m => m.Raza)
+                .Include(m => m.Consultas)
+                   .ThenInclude(c => c.Veterinario)
+                   .ThenInclude(v => v!.Usuario)
+                .Include(m => m.Consultas)
+                    .ThenInclude(c => c.Usuario)
+                .Include(m => m.Consultas)
+                    .ThenInclude(c => c.HistoriasClinicas)
+                .AsSplitQuery()
+                .FirstOrDefaultAsync(m => m.IdMascota == id);
+
+            if (mascota == null)
+                return NotFound();
+
+            mascota.Consultas = mascota.Consultas
+                .OrderByDescending(c => c.FechaHora)
+                .ToList();
+
+            return View(mascota);
+        }
+
         // GET: Crear mascota
         [HttpGet]
         [Authorize(Roles = "Administrador,Empleado")]
         public IActionResult Create()
         {
             CargarListas();
-
             return View();
         }
 
@@ -74,12 +101,10 @@ namespace Veterinaria.Controllers
             }
 
             CargarListas(mascota);
-
             return View(mascota);
         }
 
         // Obtener razas según especie
-        // Utilizado por los formularios de creación y edición
         [HttpGet]
         [Authorize(Roles = "Administrador,Empleado")]
         public IActionResult ObtenerRazasPorEspecie(int idEspecie)
@@ -107,7 +132,6 @@ namespace Veterinaria.Controllers
                 return NotFound();
 
             CargarListas(mascota);
-
             return View(mascota);
         }
 
@@ -131,7 +155,6 @@ namespace Veterinaria.Controllers
             }
 
             CargarListas(mascota);
-
             return View(mascota);
         }
 
@@ -165,7 +188,6 @@ namespace Veterinaria.Controllers
         // Cargar listas para los formularios
         private void CargarListas(Mascota? mascota = null)
         {
-            // Propietarios activos
             ViewBag.Clientes = new SelectList(
                 _context.Clientes
                     .Where(c => c.Activo)
@@ -180,7 +202,6 @@ namespace Veterinaria.Controllers
                 mascota?.IdCliente
             );
 
-            // Especies activas
             ViewBag.Especies = new SelectList(
                 _context.Especies
                     .Where(e => e.Activo),
@@ -189,7 +210,6 @@ namespace Veterinaria.Controllers
                 mascota?.IdEspecie
             );
 
-            // Razas de la especie seleccionada
             if (mascota != null && mascota.IdEspecie > 0)
             {
                 var razas = _repositorioRaza
