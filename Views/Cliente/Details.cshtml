@@ -2,71 +2,88 @@
 
 @{
     ViewData["Title"] = "Detalles del Cliente";
+
+    bool puedeAdministrar =
+        User.IsInRole("Administrador") ||
+        User.IsInRole("Empleado");
 }
 
 <h1>Detalles del Cliente</h1>
 
 <hr />
 
-<div>
-    <dl class="row">
-        <dt class="col-sm-3">
-            @Html.DisplayNameFor(model => model.Nombre)
-        </dt>
-        <dd class="col-sm-9">
-            @Html.DisplayFor(model => model.Nombre)
-        </dd>
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            Información del Propietario
+        </h5>
+    </div>
 
-        <dt class="col-sm-3">
-            @Html.DisplayNameFor(model => model.Apellido)
-        </dt>
-        <dd class="col-sm-9">
-            @Html.DisplayFor(model => model.Apellido)
-        </dd>
+    <div class="card-body">
+        <dl class="row">
 
-        <dt class="col-sm-3">
-            @Html.DisplayNameFor(model => model.Dni)
-        </dt>
-        <dd class="col-sm-9">
-            @Html.DisplayFor(model => model.Dni)
-        </dd>
+            <dt class="col-sm-3">Nombre</dt>
+            <dd class="col-sm-9">
+                @Model.Nombre
+            </dd>
 
-        <dt class="col-sm-3">
-            @Html.DisplayNameFor(model => model.Telefono)
-        </dt>
-        <dd class="col-sm-9">
-            @Html.DisplayFor(model => model.Telefono)
-        </dd>
+            <dt class="col-sm-3">Apellido</dt>
+            <dd class="col-sm-9">
+                @Model.Apellido
+            </dd>
 
-        <dt class="col-sm-3">
-            @Html.DisplayNameFor(model => model.Correo)
-        </dt>
-        <dd class="col-sm-9">
-            @Html.DisplayFor(model => model.Correo)
-        </dd>
+            <dt class="col-sm-3">DNI</dt>
+            <dd class="col-sm-9">
+                @Model.Dni
+            </dd>
 
-        <dt class="col-sm-3">
-            @Html.DisplayNameFor(model => model.Direccion)
-        </dt>
-        <dd class="col-sm-9">
-            @Html.DisplayFor(model => model.Direccion)
-        </dd>
+            <dt class="col-sm-3">Teléfono</dt>
+            <dd class="col-sm-9">
+                @Model.Telefono
+            </dd>
 
-        <dt class="col-sm-3">
-            @Html.DisplayNameFor(model => model.Activo)
-        </dt>
-        <dd class="col-sm-9">
-            @Html.DisplayFor(model => model.Activo)
-        </dd>
-    </dl>
+            <dt class="col-sm-3">Correo electrónico</dt>
+            <dd class="col-sm-9">
+                @Model.Correo
+            </dd>
+
+            <dt class="col-sm-3">Dirección</dt>
+            <dd class="col-sm-9">
+                @Model.Direccion
+            </dd>
+
+            <dt class="col-sm-3">Estado</dt>
+            <dd class="col-sm-9">
+                @if (Model.Activo)
+                {
+                    <span class="badge bg-success">
+                        Activo
+                    </span>
+                }
+                else
+                {
+                    <span class="badge bg-secondary">
+                        Inactivo
+                    </span>
+                }
+            </dd>
+
+        </dl>
+    </div>
 </div>
 
-<div>
-    <a asp-action="Edit" asp-route-id="@Model.IdCliente" class="btn btn-primary">
-        Editar
-    </a>
+<!-- Acciones -->
+<div class="mb-4 d-flex gap-2">
+
+    @if (puedeAdministrar)
+    {
+        <a asp-action="Edit" asp-route-id="@Model.IdCliente" class="btn btn-warning">
+            Editar
+        </a>
+    }
 
     <a asp-action="Index" class="btn btn-secondary">
         Volver
     </a>
+
 </div>

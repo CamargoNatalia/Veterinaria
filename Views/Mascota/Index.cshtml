@@ -2,61 +2,147 @@
 
 @{
     ViewData["Title"] = "Mascotas";
+
+    bool puedeAdministrar =
+        User.IsInRole("Administrador") ||
+        User.IsInRole("Empleado");
 }
 
-<h1>Mascotas</h1>
+<h1>Gestión de Mascotas</h1>
 
-<p>
-    <a asp-action="Create" class="btn btn-primary">Nueva mascota</a>
-</p>
+<hr />
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Nombre</th>
-            <th>Especie</th>
-            <th>Raza</th>
-            <th>Dueño</th>
-            <th>Fecha de nacimiento</th>
-            <th>Sexo</th>
-            <th>Peso</th>
-            <th>Activo</th>
-            <th></th>
-        </tr>
-    </thead>
+@if (TempData["Mensaje"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Mensaje"]
+    </div>
+}
 
-    <tbody>
-        @foreach (var mascota in Model)
-        {
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}
+
+<!-- Nueva mascota: Administrador y Empleado -->
+@if (puedeAdministrar)
+{
+    <div class="mb-3">
+        <a asp-action="Create" class="btn btn-primary">
+            Nueva Mascota
+        </a>
+    </div>
+}
+
+<!-- Listado de mascotas -->
+<div class="table-responsive">
+
+    <table class="table table-striped table-bordered align-middle">
+
+        <thead class="table-dark">
             <tr>
-                <td>@mascota.Nombre</td>
-                <td>@mascota.Especie.Nombre</td>
-                <td>@mascota.Raza.Nombre</td>
-                <td>
-                    @mascota.Cliente.Nombre @mascota.Cliente.Apellido
-                </td>
-                <td>
-                    @(mascota.FechaNacimiento?.ToString("dd/MM/yyyy") ?? "-")
-                </td>
-                <td>@(mascota.Sexo ?? "-")</td>
-                <td>@(mascota.Peso?.ToString("0.##") ?? "-")</td>
-                <td>
-                    @(mascota.Activo ? "Sí" : "No")
-                </td>
-                <td>
-                    <a asp-action="Details" asp-route-id="@mascota.IdMascota" class="btn btn-info btn-sm">
-                        Detalles
-                    </a>
-
-                    <a asp-action="Edit" asp-route-id="@mascota.IdMascota" class="btn btn-warning btn-sm">
-                        Editar
-                    </a>
-
-                    <a asp-action="Delete" asp-route-id="@mascota.IdMascota" class="btn btn-danger btn-sm">
-                        Eliminar
-                    </a>
-                </td>
+                <th>Nombre</th>
+                <th>Especie</th>
+                <th>Raza</th>
+                <th>Dueño</th>
+                <th>Fecha de nacimiento</th>
+                <th>Sexo</th>
+                <th>Peso</th>
+                <th>Estado</th>
+                <th>Acciones</th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+
+        <tbody>
+            @foreach (var mascota in Model)
+            {
+                <tr>
+                    <td>@mascota.Nombre</td>
+
+                    <td>
+                        @(mascota.Especie?.Nombre ?? "-")
+                    </td>
+
+                    <td>
+                        @(mascota.Raza?.Nombre ?? "-")
+                    </td>
+
+                    <td>
+                        @if (mascota.Cliente != null)
+                        {
+                            @($"{mascota.Cliente.Nombre} {mascota.Cliente.Apellido}")
+                        }
+                        else
+                        {
+                            <span class="text-muted">
+                                Sin propietario
+                            </span>
+                        }
+                    </td>
+
+                    <td>
+                        @(mascota.FechaNacimiento?.ToString("dd/MM/yyyy") ?? "-")
+                    </td>
+
+                    <td>
+                        @(mascota.Sexo ?? "-")
+                    </td>
+
+                    <td>
+                        @(mascota.Peso?.ToString("0.##") ?? "-")
+                    </td>
+
+                    <td>
+                        @if (mascota.Activo)
+                        {
+                            <span class="badge bg-success">
+                                Activa
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">
+                                Inactiva
+                            </span>
+                        }
+                    </td>
+
+                    <td>
+                        <div class="d-flex gap-1 flex-wrap">
+
+                            <!-- Disponible para los tres roles -->
+                            <a asp-action="Details" asp-route-id="@mascota.IdMascota" class="btn btn-info btn-sm">
+                                Ver
+                            </a>
+
+                            <!-- Solo Administrador y Empleado -->
+                            @if (puedeAdministrar)
+                            {
+                                <a asp-action="Edit" asp-route-id="@mascota.IdMascota" class="btn btn-warning btn-sm">
+                                    Editar
+                                </a>
+
+                                <a asp-action="Delete" asp-route-id="@mascota.IdMascota" class="btn btn-danger btn-sm">
+                                    Eliminar
+                                </a>
+                            }
+
+                        </div>
+                    </td>
+                </tr>
+            }
+
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="9" class="text-center text-muted">
+                        No hay mascotas registradas.
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+</div>

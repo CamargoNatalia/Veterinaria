@@ -21,5 +21,6 @@ namespace Veterinaria.Interfaces
 
         // Roles
         bool CambiarRol(int idUsuario, string nuevoRol);
+        bool TieneFichaVeterinario(int idUsuario);
     }
 }

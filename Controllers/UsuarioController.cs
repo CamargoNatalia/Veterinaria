@@ -527,77 +527,169 @@ namespace Veterinaria.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Edit(int id, Usuario usuario)
         {
+
             if (id != usuario.IdUsuario)
                 return NotFound();
 
+
+            var usuarioActual = _repositorioUsuario.ObtenerPorId(id);
+
+            if (usuarioActual == null)
+                return NotFound();
+
+
+            usuario.Nombre = usuario.Nombre?.Trim() ?? "";
+            usuario.Email = usuario.Email?.Trim() ?? "";
+
+
+            ModelState.Remove(nameof(Usuario.Clave));
+            ModelState.Remove(nameof(Usuario.Rol));
+            ModelState.Remove(nameof(Usuario.Veterinario));
+            ModelState.Remove(nameof(Usuario.Turnos));
+            ModelState.Remove(nameof(Usuario.Consultas));
+
+            if (string.IsNullOrWhiteSpace(usuario.Nombre) ||
+                usuario.Nombre.Length > 100)
+            {
+                ModelState.AddModelError(
+                    nameof(Usuario.Nombre),
+                    "Ingrese un nombre válido.");
+            }
+
+
+            if (string.IsNullOrWhiteSpace(usuario.Email) ||
+                usuario.Email.Length > 150 ||
+                !new System.ComponentModel.DataAnnotations.EmailAddressAttribute()
+                    .IsValid(usuario.Email))
+            {
+                ModelState.AddModelError(
+                    nameof(Usuario.Email),
+                    "Ingrese un correo electrónico válido.");
+            }
+
+
+            if (!string.IsNullOrWhiteSpace(usuario.Email))
+            {
+                var otroUsuario =
+                    _repositorioUsuario.ObtenerPorEmail(usuario.Email);
+
+                if (otroUsuario != null &&
+                    otroUsuario.IdUsuario != id)
+                {
+                    ModelState.AddModelError(
+                        nameof(Usuario.Email),
+                        "El correo electrónico ya está registrado.");
+                }
+            }
+
             if (ModelState.IsValid)
             {
-                var usuarioActual = _repositorioUsuario.ObtenerPorId(id);
-
-                if (usuarioActual == null)
-                    return NotFound();
-
                 usuarioActual.Nombre = usuario.Nombre;
                 usuarioActual.Email = usuario.Email;
-                usuarioActual.Rol = usuario.Rol;
                 usuarioActual.Activo = usuario.Activo;
 
+
                 _repositorioUsuario.Editar(usuarioActual);
+
+                TempData["Mensaje"] =
+                    "Usuario actualizado correctamente.";
 
                 return RedirectToAction(nameof(Index));
             }
 
+            usuario.Rol = usuarioActual.Rol;
+
             return View(usuario);
         }
 
-
-        // Roles
+        // Cambiar rol de usuario
         [HttpPost]
         [Authorize(Roles = "Administrador")]
         [ValidateAntiForgeryToken]
-        public IActionResult CambiarRol(int id)
+        public IActionResult CambiarRol(int id, string nuevoRol)
         {
             var usuario = _repositorioUsuario.ObtenerPorId(id);
 
             if (usuario == null)
                 return NotFound();
 
-            var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            // Identificar al administrador conectado
+            var idClaim = User.FindFirst(
+                ClaimTypes.NameIdentifier)?.Value;
 
             if (!int.TryParse(idClaim, out int idActual))
                 return Unauthorized();
 
+            // Impedir cambiar el propio rol
             if (id == idActual)
             {
-                TempData["Error"] = "No podés modificar tu propio rol.";
+                TempData["Error"] =
+                    "No podés modificar tu propio rol.";
+
                 return RedirectToAction(nameof(Index));
             }
 
+            // No modificar usuarios inactivos
             if (!usuario.Activo)
             {
-                TempData["Error"] = "No se puede cambiar el rol de un usuario inactivo.";
+                TempData["Error"] =
+                    "No se puede cambiar el rol de un usuario inactivo.";
+
                 return RedirectToAction(nameof(Index));
             }
 
-            if (usuario.Rol != "Empleado" && usuario.Rol != "Administrador")
+            string[] rolesPermitidos =
             {
-                TempData["Error"] = "El usuario tiene un rol no reconocido.";
+        "Administrador",
+        "Empleado",
+        "Veterinario"
+    };
+
+            if (string.IsNullOrWhiteSpace(nuevoRol) ||
+                !rolesPermitidos.Contains(nuevoRol))
+            {
+                TempData["Error"] =
+                    "Seleccione un rol válido.";
+
                 return RedirectToAction(nameof(Index));
             }
 
-            var nuevoRol = usuario.Rol == "Administrador"
-                ? "Empleado"
-                : "Administrador";
+            // Verificar si tiene ficha profesional
+            bool tieneFicha = _repositorioUsuario
+                .TieneFichaVeterinario(id);
 
-            var actualizado = _repositorioUsuario.CambiarRol(id, nuevoRol);
+            if (tieneFicha && nuevoRol != "Veterinario")
+            {
+                TempData["Error"] =
+                    "El usuario tiene una ficha profesional asociada. " +
+                    "No se puede cambiar su rol directamente.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (usuario.Rol == nuevoRol)
+            {
+                TempData["Mensaje"] =
+                    "El usuario ya tiene ese rol.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Actualizar mediante el repositorio
+            bool actualizado = _repositorioUsuario
+                .CambiarRol(id, nuevoRol);
 
             if (!actualizado)
             {
-                TempData["Error"] = "No se pudo modificar el rol.";
+                TempData["Error"] =
+                    "No se pudo cambiar el rol. " +
+                    "Verifique que no sea el último administrador activo.";
+
                 return RedirectToAction(nameof(Index));
             }
 
-            TempData["Mensaje"] = $"El rol de {usuario.Nombre} se actualizó a {nuevoRol}.";
+            TempData["Mensaje"] =
+                $"El rol de {usuario.Nombre} se actualizó a {nuevoRol}.";
 
             return RedirectToAction(nameof(Index));
         }

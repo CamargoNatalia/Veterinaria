@@ -2,87 +2,108 @@
 
 @{
     ViewData["Title"] = "Detalles de la Mascota";
+
+    bool puedeAdministrar =
+        User.IsInRole("Administrador") ||
+        User.IsInRole("Empleado");
 }
 
 <h1>Detalles de la Mascota</h1>
 
 <hr />
 
-<div>
-    <dl class="row">
+<div class="card mb-4">
 
-        <dt class="col-sm-3">
-            Nombre
-        </dt>
-        <dd class="col-sm-9">
-            @Model.Nombre
-        </dd>
+    <div class="card-header">
+        <h5 class="mb-0">
+            Información de la Mascota
+        </h5>
+    </div>
 
-        <dt class="col-sm-3">
-            Cliente
-        </dt>
-        <dd class="col-sm-9">
-            @Model.Cliente.Nombre @Model.Cliente.Apellido
-        </dd>
+    <div class="card-body">
+        <dl class="row">
 
-        <dt class="col-sm-3">
-            Especie
-        </dt>
-        <dd class="col-sm-9">
-            @Model.Especie.Nombre
-        </dd>
+            <dt class="col-sm-3">Nombre</dt>
+            <dd class="col-sm-9">
+                @Model.Nombre
+            </dd>
 
-        <dt class="col-sm-3">
-            Raza
-        </dt>
-        <dd class="col-sm-9">
-            @Model.Raza.Nombre
-        </dd>
+            <dt class="col-sm-3">Propietario</dt>
+            <dd class="col-sm-9">
+                @if (Model.Cliente != null)
+                {
+                    @($"{Model.Cliente.Nombre} {Model.Cliente.Apellido}")
+                }
+                else
+                {
+                    <span class="text-muted">
+                        Sin propietario
+                    </span>
+                }
+            </dd>
 
-        <dt class="col-sm-3">
-            Fecha de nacimiento
-        </dt>
-        <dd class="col-sm-9">
-            @(Model.FechaNacimiento?.ToString("dd/MM/yyyy") ?? "-")
-        </dd>
+            <dt class="col-sm-3">Especie</dt>
+            <dd class="col-sm-9">
+                @(Model.Especie?.Nombre ?? "-")
+            </dd>
 
-        <dt class="col-sm-3">
-            Sexo
-        </dt>
-        <dd class="col-sm-9">
-            @(Model.Sexo ?? "-")
-        </dd>
+            <dt class="col-sm-3">Raza</dt>
+            <dd class="col-sm-9">
+                @(Model.Raza?.Nombre ?? "-")
+            </dd>
 
-        <dt class="col-sm-3">
-            Peso
-        </dt>
-        <dd class="col-sm-9">
-            @(Model.Peso?.ToString("0.##") ?? "-")
-        </dd>
+            <dt class="col-sm-3">Fecha de nacimiento</dt>
+            <dd class="col-sm-9">
+                @(Model.FechaNacimiento?.ToString("dd/MM/yyyy") ?? "-")
+            </dd>
 
-        <dt class="col-sm-3">
-            Observaciones
-        </dt>
-        <dd class="col-sm-9">
-            @(Model.Observaciones ?? "-")
-        </dd>
+            <dt class="col-sm-3">Sexo</dt>
+            <dd class="col-sm-9">
+                @(Model.Sexo ?? "-")
+            </dd>
 
-        <dt class="col-sm-3">
-            Activo
-        </dt>
-        <dd class="col-sm-9">
-            @(Model.Activo ? "Sí" : "No")
-        </dd>
+            <dt class="col-sm-3">Peso</dt>
+            <dd class="col-sm-9">
+                @(Model.Peso?.ToString("0.##") ?? "-") kg
+            </dd>
 
-    </dl>
+            <dt class="col-sm-3">Observaciones</dt>
+            <dd class="col-sm-9">
+                @(Model.Observaciones ?? "-")
+            </dd>
+
+            <dt class="col-sm-3">Estado</dt>
+            <dd class="col-sm-9">
+                @if (Model.Activo)
+                {
+                    <span class="badge bg-success">
+                        Activa
+                    </span>
+                }
+                else
+                {
+                    <span class="badge bg-secondary">
+                        Inactiva
+                    </span>
+                }
+            </dd>
+
+        </dl>
+    </div>
 </div>
 
-<div>
-    <a asp-action="Edit" asp-route-id="@Model.IdMascota" class="btn btn-primary">
-        Editar
-    </a>
+<!-- Acciones -->
+<div class="mb-4 d-flex gap-2 flex-wrap">
+
+    @if (puedeAdministrar)
+    {
+        <a asp-action="Edit" asp-route-id="@Model.IdMascota" class="btn btn-warning">
+            Editar
+        </a>
+    }
 
     <a asp-action="Index" class="btn btn-secondary">
         Volver
     </a>
+
 </div>

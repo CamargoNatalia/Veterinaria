@@ -1,4 +1,3 @@
-
 @model IEnumerable<Veterinaria.Models.Usuario>
 
 @using System.Security.Claims
@@ -6,120 +5,195 @@
 @{
     ViewData["Title"] = "Usuarios";
 
-    var idActual = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    var idActual = User.FindFirst(
+        ClaimTypes.NameIdentifier)?.Value;
 }
 
-<h1>Usuarios</h1>
+<h1>Gestión de Usuarios</h1>
 
+<hr />
+
+<!-- Mensajes -->
 @if (TempData["Mensaje"] != null)
 {
     <div class="alert alert-success alert-dismissible fade show" role="alert">
+
         @TempData["Mensaje"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
     </div>
 }
 
 @if (TempData["Error"] != null)
 {
     <div class="alert alert-danger alert-dismissible fade show" role="alert">
+
         @TempData["Error"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
     </div>
 }
 
-<p>
-    <a asp-action="Create" class="btn btn-primary">Nuevo Usuario</a>
-</p>
+<!-- Nuevo usuario -->
+<div class="mb-3">
+    <a asp-action="Create" class="btn btn-primary">
+        Nuevo Usuario
+    </a>
+</div>
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>@Html.DisplayNameFor(model => model.Nombre)</th>
-            <th>@Html.DisplayNameFor(model => model.Email)</th>
-            <th>@Html.DisplayNameFor(model => model.Rol)</th>
-            <th>@Html.DisplayNameFor(model => model.Activo)</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
+<!-- Listado -->
+<div class="table-responsive">
 
-    <tbody>
-        @foreach (var usuario in Model)
-        {
-            var esUsuarioActual = usuario.IdUsuario.ToString() == idActual;
+    <table class="table table-striped table-bordered align-middle">
 
+        <thead class="table-dark">
             <tr>
-                <td>@usuario.Nombre</td>
-
-                <td>@usuario.Email</td>
-
-                <td>@usuario.Rol</td>
-
-                <td>@(usuario.Activo ? "Activo" : "Inactivo")</td>
-
-                <td>
-                    <div class="d-flex gap-1 flex-wrap">
-
-                        <a asp-action="Details"
-                           asp-route-id="@usuario.IdUsuario"
-                           class="btn btn-info btn-sm">
-                            Ver
-                        </a>
-
-                        <a asp-action="Edit"
-                           asp-route-id="@usuario.IdUsuario"
-                           class="btn btn-warning btn-sm">
-                            Editar
-                        </a>
-
-                        <a asp-action="Delete"
-                           asp-route-id="@usuario.IdUsuario"
-                           class="btn btn-danger btn-sm">
-                            Eliminar
-                        </a>
-
-                        @if (User.IsInRole("Administrador") &&
-                             !esUsuarioActual &&
-                             usuario.Activo)
-                        {
-                            @if (usuario.Rol == "Empleado")
-                            {
-                                <form asp-controller="Usuario"
-                                      asp-action="CambiarRol"
-                                      asp-route-id="@usuario.IdUsuario"
-                                      method="post"
-                                      class="d-inline">
-
-                                    @Html.AntiForgeryToken()
-
-                                    <button type="submit"
-                                            class="btn btn-success btn-sm"
-                                            onclick="return confirm('¿Desea designar a este usuario como Administrador?');">
-                                        Hacer Admin
-                                    </button>
-                                </form>
-                            }
-                            else if (usuario.Rol == "Administrador")
-                            {
-                                <form asp-controller="Usuario"
-                                      asp-action="CambiarRol"
-                                      asp-route-id="@usuario.IdUsuario"
-                                      method="post"
-                                      class="d-inline">
-
-                                    @Html.AntiForgeryToken()
-
-                                    <button type="submit"
-                                            class="btn btn-secondary btn-sm"
-                                            onclick="return confirm('¿Desea quitar el rol de Administrador a este usuario?');">
-                                        Quitar Admin
-                                    </button>
-                                </form>
-                            }
-                        }
-
-                    </div>
-                </td>
+                <th>Nombre</th>
+                <th>Correo electrónico</th>
+                <th>Rol</th>
+                <th>Estado</th>
+                <th>Acciones</th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+
+        <tbody>
+
+            @foreach (var usuario in Model)
+            {
+                var esUsuarioActual =
+                    usuario.IdUsuario.ToString() == idActual;
+
+                <tr>
+                    <td>@usuario.Nombre</td>
+
+                    <td>@usuario.Email</td>
+
+                    <td>
+                        @if (usuario.Rol == "Administrador")
+                        {
+                            <span class="badge bg-primary">
+                                Administrador
+                            </span>
+                        }
+                        else if (usuario.Rol == "Empleado")
+                        {
+                            <span class="badge bg-info text-dark">
+                                Empleado
+                            </span>
+                        }
+                        else if (usuario.Rol == "Veterinario")
+                        {
+                            <span class="badge bg-success">
+                                Veterinario
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">
+                                @usuario.Rol
+                            </span>
+                        }
+                    </td>
+
+                    <td>
+                        @if (usuario.Activo)
+                        {
+                            <span class="badge bg-success">
+                                Activo
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">
+                                Inactivo
+                            </span>
+                        }
+                    </td>
+
+                    <td>
+                        <div class="d-flex gap-2 flex-wrap align-items-center">
+
+                            <!-- Ver -->
+                            <a asp-action="Details" asp-route-id="@usuario.IdUsuario" class="btn btn-info btn-sm">
+                                Ver
+                            </a>
+
+                            <!-- Editar -->
+                            <a asp-action="Edit" asp-route-id="@usuario.IdUsuario" class="btn btn-warning btn-sm">
+                                Editar
+                            </a>
+
+                            <!-- Eliminar -->
+                            @if (!esUsuarioActual)
+                            {
+                                <a asp-action="Delete" asp-route-id="@usuario.IdUsuario" class="btn btn-danger btn-sm">
+                                    Eliminar
+                                </a>
+                            }
+
+                            <!-- Cambiar rol -->
+                            @if (User.IsInRole("Administrador") &&
+                                 !esUsuarioActual &&
+                                 usuario.Activo)
+                            {
+                                <form asp-controller="Usuario" asp-action="CambiarRol" asp-route-id="@usuario.IdUsuario"
+                                      method="post" class="d-flex gap-1 align-items-center">
+
+                                    @Html.AntiForgeryToken()
+
+                                    <select name="nuevoRol" class="form-select form-select-sm" aria-label="Nuevo rol"
+                                            style="min-width:140px;">
+
+                                        <option value="@usuario.Rol">
+                                            @usuario.Rol
+                                        </option>
+
+                                        @if (usuario.Rol != "Administrador")
+                                        {
+                                            <option value="Administrador">
+                                                Administrador
+                                            </option>
+                                        }
+
+                                        @if (usuario.Rol != "Empleado")
+                                        {
+                                            <option value="Empleado">
+                                                Empleado
+                                            </option>
+                                        }
+
+                                        @if (usuario.Rol != "Veterinario")
+                                        {
+                                            <option value="Veterinario">
+                                                Veterinario
+                                            </option>
+                                        }
+
+                                    </select>
+
+                                    <button type="submit" class="btn btn-success btn-sm"
+                                            onclick="return confirm('¿Confirma el cambio de rol de este usuario?');">
+                                        Cambiar
+                                    </button>
+
+                                </form>
+                            }
+
+                        </div>
+                    </td>
+                </tr>
+            }
+
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="5" class="text-center text-muted">
+                        No hay usuarios registrados.
+                    </td>
+                </tr>
+            }
+
+        </tbody>
+    </table>
+
+</div>
