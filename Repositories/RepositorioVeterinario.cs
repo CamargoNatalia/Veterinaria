@@ -1,3 +1,4 @@
+
 using Microsoft.EntityFrameworkCore;
 using Veterinaria.Data;
 using Veterinaria.Interfaces;
@@ -14,7 +15,6 @@ namespace Veterinaria.Repositories
             _context = context;
         }
 
-        // Listado con los datos del usuario
         public IEnumerable<Veterinario> ObtenerTodos()
         {
             return _context.Veterinarios
@@ -24,7 +24,28 @@ namespace Veterinaria.Repositories
                 .ToList();
         }
 
-        // Obtener veterinario con su usuario
+        // Paginación desde MySQL
+        public (IEnumerable<Veterinario> Veterinarios, int Total)
+            ObtenerPaginados(int pagina, int cantidadPorPagina)
+        {
+            pagina = Math.Max(1, pagina);
+            cantidadPorPagina = Math.Clamp(cantidadPorPagina, 1, 100);
+
+            var consulta = _context.Veterinarios.AsNoTracking();
+
+            int total = consulta.Count();
+
+            var veterinarios = consulta
+                .OrderBy(v => v.Usuario.Nombre)
+                .ThenBy(v => v.IdVeterinario)
+                .Skip((pagina - 1) * cantidadPorPagina)
+                .Take(cantidadPorPagina)
+                .Include(v => v.Usuario)
+                .ToList();
+
+            return (veterinarios, total);
+        }
+
         public Veterinario? ObtenerPorId(int id)
         {
             return _context.Veterinarios
@@ -33,7 +54,6 @@ namespace Veterinaria.Repositories
                 .FirstOrDefault(v => v.IdVeterinario == id);
         }
 
-        // Validar matrícula única
         public bool ExisteMatricula(
             string matricula,
             int? idExcluir = null)
@@ -44,14 +64,12 @@ namespace Veterinaria.Repositories
                      v.IdVeterinario != idExcluir.Value));
         }
 
-        // Registrar ficha profesional
         public void Crear(Veterinario veterinario)
         {
             _context.Veterinarios.Add(veterinario);
             _context.SaveChanges();
         }
 
-        // Actualizar solamente datos profesionales
         public void Editar(Veterinario veterinario)
         {
             var actual = _context.Veterinarios
@@ -67,7 +85,7 @@ namespace Veterinaria.Repositories
             _context.SaveChanges();
         }
 
-        // Baja lógica mediante la cuenta Usuario
+        // Baja lógica del usuario asociado
         public void Eliminar(int id)
         {
             var veterinario = _context.Veterinarios

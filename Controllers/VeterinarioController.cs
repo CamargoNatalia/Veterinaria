@@ -1,3 +1,4 @@
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -21,11 +22,32 @@ namespace Veterinaria.Controllers
             _repositorioUsuario = repositorioUsuario;
         }
 
-        // Listado
-        public IActionResult Index()
+        // Listado paginado
+        public IActionResult Index(int pagina = 1)
         {
-            var veterinarios = _repositorioVeterinario.ObtenerTodos();
-            return View(veterinarios);
+            const int cantidadPorPagina = 3;
+
+            pagina = Math.Max(1, pagina);
+
+            var resultado = _repositorioVeterinario
+                .ObtenerPaginados(pagina, cantidadPorPagina);
+
+            int totalPaginas = (int)Math.Ceiling(
+                (double)resultado.Total / cantidadPorPagina);
+
+            if (totalPaginas > 0 && pagina > totalPaginas)
+            {
+                pagina = totalPaginas;
+
+                resultado = _repositorioVeterinario
+                    .ObtenerPaginados(pagina, cantidadPorPagina);
+            }
+
+            ViewBag.PaginaActual = pagina;
+            ViewBag.TotalPaginas = totalPaginas;
+            ViewBag.TotalRegistros = resultado.Total;
+
+            return View(resultado.Veterinarios);
         }
 
         // Detalles
@@ -115,7 +137,6 @@ namespace Veterinaria.Controllers
 
             NormalizarDatos(datos);
 
-            // La cuenta asociada no se modifica al editar
             datos.IdUsuario = veterinario.IdUsuario;
 
             ModelState.Remove(nameof(Veterinario.Usuario));
@@ -167,7 +188,7 @@ namespace Veterinaria.Controllers
             if (veterinario == null)
                 return NotFound();
 
-            if (!veterinario.Usuario.Activo)
+            if (veterinario.Usuario?.Activo != true)
             {
                 TempData["Error"] =
                     "El veterinario ya está inactivo.";
@@ -219,7 +240,7 @@ namespace Veterinaria.Controllers
             }
         }
 
-        // Validar que el usuario pueda ser veterinario
+        // Validar usuario asociado
         private void ValidarUsuario(int idUsuario)
         {
             var usuario = _repositorioUsuario.ObtenerPorId(idUsuario);

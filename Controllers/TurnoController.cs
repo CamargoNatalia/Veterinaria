@@ -1,3 +1,4 @@
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -23,15 +24,70 @@ namespace Veterinaria.Controllers
             _context = context;
         }
 
-        // Listado de turnos
-        public IActionResult Index()
+        // LISTADO PAGINADO
+        public IActionResult Index(int pagina = 1)
         {
-            var turnos = _repositorioTurno.ObtenerTodos();
+            const int cantidadPorPagina = 3;
 
-            return View(turnos);
+            pagina = Math.Max(1, pagina);
+
+            var resultado = _repositorioTurno.ObtenerPaginados(
+                pagina, cantidadPorPagina);
+
+            int totalPaginas = (int)Math.Ceiling(
+                (double)resultado.Total / cantidadPorPagina);
+
+            if (totalPaginas > 0 && pagina > totalPaginas)
+            {
+                pagina = totalPaginas;
+
+                resultado = _repositorioTurno.ObtenerPaginados(
+                    pagina, cantidadPorPagina);
+            }
+
+            ViewBag.PaginaActual = pagina;
+            ViewBag.TotalPaginas = totalPaginas;
+            ViewBag.TotalRegistros = resultado.Total;
+
+            return View(resultado.Turnos);
         }
 
-        // Detalles de un turno
+        // BUSCAR MASCOTAS MEDIANTE AJAX
+        [HttpGet]
+        public async Task<IActionResult> BuscarMascotas(string? termino)
+        {
+            termino = (termino ?? "").Trim();
+
+            if (termino.Length < 2)
+                return Json(Array.Empty<object>());
+
+            if (termino.Length > 100)
+                termino = termino[..100];
+
+            var mascotas = await _context.Mascotas
+                .AsNoTracking()
+                .Where(m => m.Activo &&
+                    (m.Nombre.Contains(termino) ||
+                     m.Cliente.Nombre.Contains(termino) ||
+                     m.Cliente.Apellido.Contains(termino)))
+                .OrderBy(m => m.Nombre)
+                .ThenBy(m => m.IdMascota)
+                .Take(10)
+                .Select(m => new
+                {
+                    idMascota = m.IdMascota,
+                    nombre = m.Nombre,
+                    propietario = m.Cliente.Nombre + " " +
+                                  m.Cliente.Apellido,
+                    especie = m.Especie.Nombre,
+                    raza = m.Raza.Nombre
+                })
+                .ToListAsync();
+
+            return Json(mascotas);
+        }
+
+        // DETALLES
         public IActionResult Details(int id)
         {
             var turno = _repositorioTurno.ObtenerPorId(id);
@@ -42,7 +98,7 @@ namespace Veterinaria.Controllers
             return View(turno);
         }
 
-        // GET: Crear turno
+        // CREAR - GET
         [HttpGet]
         public IActionResult Create(int? idMascota)
         {
@@ -54,38 +110,31 @@ namespace Veterinaria.Controllers
             if (idMascota.HasValue)
                 turno.IdMascota = idMascota.Value;
 
-            CargarListas(turno);
+            CargarMascotaSeleccionada(turno);
 
             return View(turno);
         }
 
-        // POST: Crear turno
+        // CREAR - POST
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Create(
             [Bind("FechaHora,Motivo,Observaciones,IdMascota")]
             Turno turno)
         {
-            // Identificar al usuario autenticado
             var idClaim = User.FindFirst(
                 ClaimTypes.NameIdentifier)?.Value;
 
             if (!int.TryParse(idClaim, out int idUsuario))
                 return Unauthorized();
 
-            // Asignar automáticamente el usuario
             turno.IdUsuario = idUsuario;
-
-            // Estado inicial
             turno.Estado = "Pendiente";
 
-            // Las propiedades de navegación no llegan
-            // desde el formulario
             ModelState.Remove(nameof(Turno.IdUsuario));
             ModelState.Remove(nameof(Turno.Usuario));
             ModelState.Remove(nameof(Turno.Mascota));
 
-            // Verificar mascota activa
             if (!_context.Mascotas.Any(m =>
                     m.IdMascota == turno.IdMascota &&
                     m.Activo))
@@ -95,7 +144,6 @@ namespace Veterinaria.Controllers
                     "Seleccione una mascota activa.");
             }
 
-            // Verificar duplicación de turnos
             if (_context.Turnos.Any(t =>
                     t.IdMascota == turno.IdMascota &&
                     t.FechaHora == turno.FechaHora))
@@ -115,12 +163,11 @@ namespace Veterinaria.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            CargarListas(turno);
-
+            CargarMascotaSeleccionada(turno);
             return View(turno);
         }
 
-        // GET: Editar turno
+        // EDITAR - GET
         [HttpGet]
         public IActionResult Edit(int id)
         {
@@ -137,12 +184,11 @@ namespace Veterinaria.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            CargarListas(turno);
-
+            CargarMascotaSeleccionada(turno);
             return View(turno);
         }
 
-        // POST: Editar turno
+        // EDITAR - POST
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Edit(
@@ -166,7 +212,6 @@ namespace Veterinaria.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            // Conservar usuario y estado originales
             datos.IdUsuario = turno.IdUsuario;
             datos.Estado = turno.Estado;
 
@@ -174,7 +219,6 @@ namespace Veterinaria.Controllers
             ModelState.Remove(nameof(Turno.Usuario));
             ModelState.Remove(nameof(Turno.Mascota));
 
-            // Validar mascota
             if (!_context.Mascotas.Any(m =>
                     m.IdMascota == datos.IdMascota &&
                     m.Activo))
@@ -184,7 +228,6 @@ namespace Veterinaria.Controllers
                     "Seleccione una mascota activa.");
             }
 
-            // Evitar turnos duplicados
             if (_context.Turnos.Any(t =>
                     t.IdTurno != id &&
                     t.IdMascota == datos.IdMascota &&
@@ -210,12 +253,11 @@ namespace Veterinaria.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            CargarListas(datos);
-
+            CargarMascotaSeleccionada(datos);
             return View(datos);
         }
 
-        // GET: Eliminar turno
+        // ELIMINAR - GET
         [HttpGet]
         [Authorize(Roles = "Administrador,Empleado")]
         public IActionResult Delete(int id)
@@ -237,7 +279,7 @@ namespace Veterinaria.Controllers
             return View(turno);
         }
 
-        // POST: Eliminar turno
+        // ELIMINAR - POST
         [HttpPost, ActionName("Delete")]
         [Authorize(Roles = "Administrador,Empleado")]
         [ValidateAntiForgeryToken]
@@ -265,46 +307,33 @@ namespace Veterinaria.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // Listas necesarias para los formularios
-        private void CargarListas(Turno? turno = null)
+        // OBTENER SOLO LA MASCOTA SELECCIONADA
+        private void CargarMascotaSeleccionada(Turno? turno = null)
         {
-            // Mascotas activas o la mascota ya asociada
-            var mascotas = _context.Mascotas
-                .Include(m => m.Especie)
-                .Include(m => m.Raza)
-                .Where(m => m.Activo ||
-                    (turno != null &&
-                     m.IdMascota == turno.IdMascota))
-                .ToList();
+            ViewBag.MascotaSeleccionada = "";
 
-            ViewBag.Mascotas = new SelectList(
-                mascotas.Select(m => new
+            if (turno == null || turno.IdMascota <= 0)
+                return;
+
+            var mascota = _context.Mascotas
+                .AsNoTracking()
+                .Where(m => m.IdMascota == turno.IdMascota)
+                .Select(m => new
                 {
-                    m.IdMascota,
-                    Descripcion =
-                        $"{m.Nombre} - " +
-                        $"{m.Especie?.Nombre ?? "Sin especie"} - " +
-                        $"{m.Raza?.Nombre ?? "Sin raza"}"
-                }),
-                "IdMascota",
-                "Descripcion",
-                turno?.IdMascota);
+                    m.Nombre,
+                    Propietario = m.Cliente.Nombre + " " +
+                                  m.Cliente.Apellido,
+                    Especie = m.Especie.Nombre,
+                    Raza = m.Raza.Nombre
+                })
+                .FirstOrDefault();
 
-            // Compatibilidad temporal con vistas anteriores
-            // No se utilizará para asignar el usuario
-            var usuarios = _context.Usuarios
-                .Where(u => u.Activo)
-                .ToList();
-
-            ViewBag.Usuarios = new SelectList(
-                usuarios.Select(u => new
-                {
-                    u.IdUsuario,
-                    Descripcion = $"{u.Nombre} - {u.Rol}"
-                }),
-                "IdUsuario",
-                "Descripcion",
-                turno?.IdUsuario);
+            if (mascota != null)
+            {
+                ViewBag.MascotaSeleccionada =
+                    $"{mascota.Nombre} - {mascota.Propietario} - " +
+                    $"{mascota.Especie} - {mascota.Raza}";
+            }
         }
     }
 }

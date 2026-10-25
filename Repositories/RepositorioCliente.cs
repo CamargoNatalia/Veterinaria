@@ -1,3 +1,5 @@
+
+using Microsoft.EntityFrameworkCore;
 using Veterinaria.Data;
 using Veterinaria.Interfaces;
 using Veterinaria.Models;
@@ -44,6 +46,44 @@ namespace Veterinaria.Repositories
                 _context.Clientes.Remove(cliente);
                 _context.SaveChanges();
             }
+        }
+
+        // Buscar clientes y paginar resultados
+        public (IEnumerable<Cliente> Clientes, int Total)
+            BuscarPaginados(
+                string? busqueda,
+                int pagina,
+                int cantidadPorPagina)
+        {
+            pagina = Math.Max(1, pagina);
+            cantidadPorPagina = Math.Clamp(cantidadPorPagina, 1, 100);
+
+            var consulta = _context.Clientes
+                .AsNoTracking()
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(busqueda))
+            {
+                string texto = busqueda.Trim();
+
+                consulta = consulta.Where(c =>
+                    c.Nombre.Contains(texto) ||
+                    c.Apellido.Contains(texto) ||
+                    (c.Dni != null && c.Dni.Contains(texto))
+                );
+            }
+
+            int total = consulta.Count();
+
+            var clientes = consulta
+                .OrderBy(c => c.Apellido)
+                .ThenBy(c => c.Nombre)
+                .ThenBy(c => c.IdCliente)
+                .Skip((pagina - 1) * cantidadPorPagina)
+                .Take(cantidadPorPagina)
+                .ToList();
+
+            return (clientes, total);
         }
     }
 }

@@ -1,3 +1,4 @@
+
 using Microsoft.EntityFrameworkCore;
 using Veterinaria.Data;
 using Veterinaria.Interfaces;
@@ -30,6 +31,31 @@ namespace Veterinaria.Repositories
                 .Include(m => m.Especie)
                 .Include(m => m.Raza)
                 .FirstOrDefault(m => m.IdMascota == id);
+        }
+
+        // Paginación desde MySQL
+        public (IEnumerable<Mascota> Mascotas, int Total)
+            ObtenerPaginadas(int pagina, int cantidadPorPagina)
+        {
+            pagina = Math.Max(1, pagina);
+            cantidadPorPagina = Math.Clamp(cantidadPorPagina, 1, 100);
+
+            var consulta = _context.Mascotas
+                .AsNoTracking();
+
+            int total = consulta.Count();
+
+            var mascotas = consulta
+                .OrderBy(m => m.Nombre)
+                .ThenBy(m => m.IdMascota)
+                .Skip((pagina - 1) * cantidadPorPagina)
+                .Take(cantidadPorPagina)
+                .Include(m => m.Cliente)
+                .Include(m => m.Especie)
+                .Include(m => m.Raza)
+                .ToList();
+
+            return (mascotas, total);
         }
 
         public void Crear(Mascota mascota)

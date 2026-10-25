@@ -6,7 +6,6 @@
 }
 
 <h1>Editar Consulta</h1>
-
 <hr />
 
 <div class="row">
@@ -14,14 +13,15 @@
 
         <form asp-action="Edit"
               asp-route-id="@Model.IdConsulta"
-              method="post">
+              method="post"
+              id="formConsulta">
 
             @Html.AntiForgeryToken()
 
             <input type="hidden" asp-for="IdConsulta" />
 
             <div asp-validation-summary="ModelOnly"
-                 class="text-danger"></div>
+                 class="text-danger mb-3"></div>
 
             <div class="mb-3">
                 <label asp-for="FechaHora" class="form-label">
@@ -37,20 +37,38 @@
                       class="text-danger"></span>
             </div>
 
+            <!-- MASCOTA AJAX -->
             <div class="mb-3">
-                <label asp-for="IdMascota" class="form-label">
+                <label for="buscarMascota" class="form-label">
                     Mascota
                 </label>
 
-                <select asp-for="IdMascota"
-                        asp-items="ViewBag.Mascotas"
-                        class="form-select">
+                <input id="buscarMascota"
+                       type="text"
+                       class="form-control"
+                       value="@ViewBag.MascotaSeleccionada"
+                       placeholder="Buscar mascota o propietario..."
+                       autocomplete="off"
+                       readonly="@(Model.IdTurno.HasValue)" />
 
-                    <option value="">
-                        -- Seleccione una mascota --
-                    </option>
+                <input asp-for="IdMascota" type="hidden" />
 
-                </select>
+                @if (Model.IdTurno.HasValue)
+                {
+                    <div class="form-text">
+                        Esta consulta está asociada a un turno.
+                        No se puede cambiar la mascota.
+                    </div>
+                }
+                else
+                {
+                    <div id="resultadosMascotas"
+                         class="list-group mt-1"></div>
+
+                    <div id="avisoMascota" class="form-text">
+                        Podés buscar otra mascota o conservar la actual.
+                    </div>
+                }
 
                 <span asp-validation-for="IdMascota"
                       class="text-danger"></span>
@@ -123,10 +141,136 @@
             </div>
 
         </form>
-
     </div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            const buscador = document.getElementById("buscarMascota");
+            const idMascota = document.getElementById("IdMascota");
+            const resultados = document.getElementById("resultadosMascotas");
+            const aviso = document.getElementById("avisoMascota");
+
+            const urlBuscar =
+                '@Url.Action("BuscarMascotas", "Turno")';
+
+            let temporizador;
+            let solicitudActual = 0;
+
+            if (!buscador.readOnly) {
+
+                buscador.addEventListener("input", function () {
+
+                    const texto = buscador.value.trim();
+                    const numeroSolicitud = ++solicitudActual;
+
+                    clearTimeout(temporizador);
+
+                    idMascota.value = "";
+                    resultados.replaceChildren();
+
+                    aviso.textContent =
+                        "Seleccioná una mascota de los resultados.";
+
+                    if (texto.length < 2) {
+                        aviso.textContent =
+                            "Escribí al menos 2 caracteres.";
+                        return;
+                    }
+
+                    temporizador = setTimeout(async function () {
+
+                        try {
+                            const respuesta = await fetch(
+                                urlBuscar + "?termino=" +
+                                encodeURIComponent(texto),
+                                { credentials: "same-origin" }
+                            );
+
+                            if (!respuesta.ok)
+                                throw new Error("Error");
+
+                            const mascotas = await respuesta.json();
+
+                            if (numeroSolicitud !== solicitudActual)
+                                return;
+
+                            resultados.replaceChildren();
+
+                            if (mascotas.length === 0) {
+                                aviso.textContent =
+                                    "No se encontraron mascotas activas.";
+                                return;
+                            }
+
+                            aviso.textContent =
+                                "Elegí una mascota de la lista.";
+
+                            mascotas.forEach(function (mascota) {
+
+                                const descripcion =
+                                    mascota.nombre + " - " +
+                                    mascota.propietario + " - " +
+                                    mascota.especie + " - " +
+                                    mascota.raza;
+
+                                const boton =
+                                    document.createElement("button");
+
+                                boton.type = "button";
+                                boton.className =
+                                    "list-group-item list-group-item-action";
+
+                                boton.textContent = descripcion;
+
+                                boton.addEventListener("click", function () {
+
+                                    ++solicitudActual;
+                                    clearTimeout(temporizador);
+
+                                    idMascota.value = mascota.idMascota;
+                                    buscador.value = descripcion;
+
+                                    resultados.replaceChildren();
+
+                                    aviso.textContent =
+                                        "Mascota seleccionada correctamente.";
+                                });
+
+                                resultados.appendChild(boton);
+                            });
+
+                        } catch (error) {
+                            if (numeroSolicitud === solicitudActual) {
+                                resultados.replaceChildren();
+                                aviso.textContent =
+                                    "No se pudo realizar la búsqueda.";
+                            }
+                        }
+                    }, 300);
+                });
+            }
+
+            document.getElementById("formConsulta")
+                .addEventListener("submit", function (e) {
+
+                    if (!idMascota.value ||
+                        Number(idMascota.value) <= 0) {
+
+                        e.preventDefault();
+
+                        if (aviso) {
+                            aviso.textContent =
+                                "Tenés que seleccionar una mascota.";
+                        }
+
+                        buscador.focus();
+                    }
+                });
+        });
+    </script>
 }

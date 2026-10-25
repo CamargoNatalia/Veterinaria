@@ -3,8 +3,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using Veterinaria.Interfaces;
 using Veterinaria.Data;
+using Veterinaria.Interfaces;
 using Veterinaria.Models;
 
 namespace Veterinaria.Controllers
@@ -26,14 +26,34 @@ namespace Veterinaria.Controllers
             _context = context;
         }
 
-        // Listado de mascotas
-        public IActionResult Index()
+        // LISTADO PAGINADO
+        public IActionResult Index(int pagina = 1)
         {
-            var mascotas = _repositorioMascota.ObtenerTodos();
-            return View(mascotas);
+            const int cantidadPorPagina = 3;
+
+            pagina = Math.Max(1, pagina);
+
+            var resultado = _repositorioMascota.ObtenerPaginadas(
+                pagina, cantidadPorPagina);
+
+            int totalPaginas = (int)Math.Ceiling(
+                (double)resultado.Total / cantidadPorPagina);
+
+            if (totalPaginas > 0 && pagina > totalPaginas)
+            {
+                pagina = totalPaginas;
+                resultado = _repositorioMascota.ObtenerPaginadas(
+                    pagina, cantidadPorPagina);
+            }
+
+            ViewBag.PaginaActual = pagina;
+            ViewBag.TotalPaginas = totalPaginas;
+            ViewBag.TotalRegistros = resultado.Total;
+
+            return View(resultado.Mascotas);
         }
 
-        // Detalles de una mascota
+        // DETALLES
         public IActionResult Details(int id)
         {
             var mascota = _repositorioMascota.ObtenerPorId(id);
@@ -44,36 +64,91 @@ namespace Veterinaria.Controllers
             return View(mascota);
         }
 
-        // HISTORIA CLÍNICA POR MASCOTA
+        // HISTORIA CLÍNICA PAGINADA
         [HttpGet]
-        public async Task<IActionResult> HistoriaClinica(int id)
+        public async Task<IActionResult> HistoriaClinica(
+            int id, int pagina = 1)
         {
+            const int cantidadPorPagina = 3;
+
+            pagina = Math.Max(1, pagina);
+
             var mascota = await _context.Mascotas
                 .AsNoTracking()
                 .Include(m => m.Cliente)
                 .Include(m => m.Especie)
                 .Include(m => m.Raza)
-                .Include(m => m.Consultas)
-                   .ThenInclude(c => c.Veterinario)
-                   .ThenInclude(v => v!.Usuario)
-                .Include(m => m.Consultas)
-                    .ThenInclude(c => c.Usuario)
-                .Include(m => m.Consultas)
-                    .ThenInclude(c => c.HistoriasClinicas)
-                .AsSplitQuery()
                 .FirstOrDefaultAsync(m => m.IdMascota == id);
 
             if (mascota == null)
                 return NotFound();
 
-            mascota.Consultas = mascota.Consultas
+            var consultaBase = _context.Consultas
+                .AsNoTracking()
+                .Where(c => c.IdMascota == id);
+
+            int totalConsultas = await consultaBase.CountAsync();
+
+            int totalPaginas = (int)Math.Ceiling(
+                (double)totalConsultas / cantidadPorPagina);
+
+            if (totalPaginas > 0 && pagina > totalPaginas)
+                pagina = totalPaginas;
+
+            var consultas = await consultaBase
                 .OrderByDescending(c => c.FechaHora)
-                .ToList();
+                .ThenByDescending(c => c.IdConsulta)
+                .Skip((pagina - 1) * cantidadPorPagina)
+                .Take(cantidadPorPagina)
+                .Include(c => c.Veterinario)
+                    .ThenInclude(v => v!.Usuario)
+                .Include(c => c.HistoriasClinicas)
+                .AsSplitQuery()
+                .ToListAsync();
+
+            mascota.Consultas = consultas;
+
+            ViewBag.PaginaActual = pagina;
+            ViewBag.TotalPaginas = totalPaginas;
+            ViewBag.TotalConsultas = totalConsultas;
 
             return View(mascota);
         }
 
-        // GET: Crear mascota
+        // BUSCAR CLIENTES POR AJAX
+        [HttpGet]
+        [Authorize(Roles = "Administrador,Empleado")]
+        public async Task<IActionResult> BuscarClientes(string? termino)
+        {
+            termino = (termino ?? "").Trim();
+
+            if (termino.Length < 2)
+                return Json(Array.Empty<object>());
+
+            if (termino.Length > 100)
+                termino = termino.Substring(0, 100);
+
+            var clientes = await _context.Clientes
+                .AsNoTracking()
+                .Where(c => c.Activo &&
+                    (c.Nombre.Contains(termino) ||
+                     c.Apellido.Contains(termino) ||
+                     (c.Dni != null && c.Dni.Contains(termino))))
+                .OrderBy(c => c.Apellido)
+                .ThenBy(c => c.Nombre)
+                .Take(10)
+                .Select(c => new
+                {
+                    idCliente = c.IdCliente,
+                    nombre = c.Nombre + " " + c.Apellido,
+                    dni = c.Dni
+                })
+                .ToListAsync();
+
+            return Json(clientes);
+        }
+
+        // CREAR - GET
         [HttpGet]
         [Authorize(Roles = "Administrador,Empleado")]
         public IActionResult Create()
@@ -82,13 +157,19 @@ namespace Veterinaria.Controllers
             return View();
         }
 
-        // POST: Crear mascota
+        // CREAR - POST
         [HttpPost]
         [Authorize(Roles = "Administrador,Empleado")]
         [ValidateAntiForgeryToken]
         public IActionResult Create(Mascota mascota)
         {
             mascota.Activo = true;
+
+            ValidarCliente(mascota.IdCliente);
+
+            ModelState.Remove(nameof(Mascota.Cliente));
+            ModelState.Remove(nameof(Mascota.Especie));
+            ModelState.Remove(nameof(Mascota.Raza));
 
             if (ModelState.IsValid)
             {
@@ -104,7 +185,7 @@ namespace Veterinaria.Controllers
             return View(mascota);
         }
 
-        // Obtener razas según especie
+        // OBTENER RAZAS POR ESPECIE
         [HttpGet]
         [Authorize(Roles = "Administrador,Empleado")]
         public IActionResult ObtenerRazasPorEspecie(int idEspecie)
@@ -121,7 +202,7 @@ namespace Veterinaria.Controllers
             return Json(razas);
         }
 
-        // GET: Editar mascota
+        // EDITAR - GET
         [HttpGet]
         [Authorize(Roles = "Administrador,Empleado")]
         public IActionResult Edit(int id)
@@ -135,7 +216,7 @@ namespace Veterinaria.Controllers
             return View(mascota);
         }
 
-        // POST: Editar mascota
+        // EDITAR - POST
         [HttpPost]
         [Authorize(Roles = "Administrador,Empleado")]
         [ValidateAntiForgeryToken]
@@ -144,9 +225,31 @@ namespace Veterinaria.Controllers
             if (id != mascota.IdMascota)
                 return NotFound();
 
+            var actual = _context.Mascotas
+                .FirstOrDefault(m => m.IdMascota == id);
+
+            if (actual == null)
+                return NotFound();
+
+            ValidarCliente(mascota.IdCliente);
+
+            ModelState.Remove(nameof(Mascota.Cliente));
+            ModelState.Remove(nameof(Mascota.Especie));
+            ModelState.Remove(nameof(Mascota.Raza));
+
             if (ModelState.IsValid)
             {
-                _repositorioMascota.Editar(mascota);
+                actual.Nombre = mascota.Nombre;
+                actual.IdCliente = mascota.IdCliente;
+                actual.IdEspecie = mascota.IdEspecie;
+                actual.IdRaza = mascota.IdRaza;
+                actual.FechaNacimiento = mascota.FechaNacimiento;
+                actual.Sexo = mascota.Sexo;
+                actual.Peso = mascota.Peso;
+                actual.Observaciones = mascota.Observaciones;
+                actual.Activo = mascota.Activo;
+
+                _context.SaveChanges();
 
                 TempData["Mensaje"] =
                     "Mascota actualizada correctamente.";
@@ -158,7 +261,7 @@ namespace Veterinaria.Controllers
             return View(mascota);
         }
 
-        // GET: Eliminar mascota
+        // ELIMINAR - GET
         [HttpGet]
         [Authorize(Roles = "Administrador,Empleado")]
         public IActionResult Delete(int id)
@@ -171,7 +274,7 @@ namespace Veterinaria.Controllers
             return View(mascota);
         }
 
-        // POST: Eliminar mascota
+        // ELIMINAR - POST
         [HttpPost, ActionName("Delete")]
         [Authorize(Roles = "Administrador,Empleado")]
         [ValidateAntiForgeryToken]
@@ -185,50 +288,72 @@ namespace Veterinaria.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // Cargar listas para los formularios
+        // VALIDAR CLIENTE
+        private void ValidarCliente(int idCliente)
+        {
+            bool existe = _context.Clientes.Any(c =>
+                c.IdCliente == idCliente && c.Activo);
+
+            if (!existe)
+            {
+                ModelState.AddModelError(
+                    nameof(Mascota.IdCliente),
+                    "Seleccione un cliente activo válido.");
+            }
+        }
+
+        // LISTAS PARA FORMULARIOS
         private void CargarListas(Mascota? mascota = null)
         {
-            ViewBag.Clientes = new SelectList(
-                _context.Clientes
-                    .Where(c => c.Activo)
+            // Solamente obtener el cliente seleccionado.
+            // No se cargan todos los clientes.
+            ViewBag.ClienteSeleccionado = null;
+
+            if (mascota != null && mascota.IdCliente > 0)
+            {
+                var cliente = _context.Clientes
+                    .AsNoTracking()
+                    .Where(c => c.IdCliente == mascota.IdCliente)
                     .Select(c => new
                     {
-                        IdCliente = c.IdCliente,
-                        NombreCompleto =
-                            c.Nombre + " " + c.Apellido
-                    }),
-                "IdCliente",
-                "NombreCompleto",
-                mascota?.IdCliente
-            );
+                        c.IdCliente,
+                        c.Nombre,
+                        c.Apellido,
+                        c.Dni
+                    })
+                    .FirstOrDefault();
+
+                if (cliente != null)
+                {
+                    ViewBag.ClienteSeleccionado =
+                        $"{cliente.Nombre} {cliente.Apellido}" +
+                        (string.IsNullOrWhiteSpace(cliente.Dni)
+                            ? ""
+                            : $" - DNI: {cliente.Dni}");
+                }
+            }
 
             ViewBag.Especies = new SelectList(
-                _context.Especies
-                    .Where(e => e.Activo),
+                _context.Especies.Where(e => e.Activo).ToList(),
                 "IdEspecie",
                 "Nombre",
-                mascota?.IdEspecie
-            );
+                mascota?.IdEspecie);
 
             if (mascota != null && mascota.IdEspecie > 0)
             {
-                var razas = _repositorioRaza
-                    .ObtenerPorEspecie(mascota.IdEspecie);
-
                 ViewBag.Razas = new SelectList(
-                    razas,
+                    _repositorioRaza.ObtenerPorEspecie(
+                        mascota.IdEspecie),
                     "IdRaza",
                     "Nombre",
-                    mascota.IdRaza
-                );
+                    mascota.IdRaza);
             }
             else
             {
                 ViewBag.Razas = new SelectList(
                     Enumerable.Empty<Raza>(),
                     "IdRaza",
-                    "Nombre"
-                );
+                    "Nombre");
             }
         }
     }

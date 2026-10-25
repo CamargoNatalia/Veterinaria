@@ -20,6 +20,27 @@ namespace Veterinaria.Repositories
             return _context.Usuarios.ToList();
         }
 
+        // Paginación desde MySQL
+        public (IEnumerable<Usuario> Usuarios, int Total)
+            ObtenerPaginados(int pagina, int cantidadPorPagina)
+        {
+            pagina = Math.Max(1, pagina);
+            cantidadPorPagina = Math.Clamp(cantidadPorPagina, 1, 100);
+
+            var consulta = _context.Usuarios.AsNoTracking();
+
+            int total = consulta.Count();
+
+            var usuarios = consulta
+                .OrderBy(u => u.Nombre)
+                .ThenBy(u => u.IdUsuario)
+                .Skip((pagina - 1) * cantidadPorPagina)
+                .Take(cantidadPorPagina)
+                .ToList();
+
+            return (usuarios, total);
+        }
+
         public Usuario? ObtenerPorId(int id)
         {
             return _context.Usuarios.Find(id);
@@ -56,7 +77,8 @@ namespace Veterinaria.Repositories
         }
 
         // Perfil
-        public bool ActualizarPerfil(int idUsuario, string nombre, string email)
+        public bool ActualizarPerfil(
+            int idUsuario, string nombre, string email)
         {
             var usuario = _context.Usuarios.Find(idUsuario);
 
@@ -71,7 +93,8 @@ namespace Veterinaria.Repositories
         }
 
         // Contraseña
-        public bool ActualizarPassword(int idUsuario, string passwordHash)
+        public bool ActualizarPassword(
+            int idUsuario, string passwordHash)
         {
             var usuario = _context.Usuarios.Find(idUsuario);
 
@@ -85,7 +108,8 @@ namespace Veterinaria.Repositories
         }
 
         // Avatar
-        public bool ActualizarAvatar(int idUsuario, string rutaAvatar)
+        public bool ActualizarAvatar(
+            int idUsuario, string rutaAvatar)
         {
             var usuario = _context.Usuarios.Find(idUsuario);
 
@@ -98,17 +122,15 @@ namespace Veterinaria.Repositories
             return true;
         }
 
-        // Roles
-
+        // Cambiar rol
         public bool CambiarRol(int idUsuario, string nuevoRol)
         {
             string[] rolesPermitidos =
             {
-        "Administrador",
-        "Empleado",
-        "Veterinario"
-    };
-
+                "Administrador",
+                "Empleado",
+                "Veterinario"
+            };
 
             if (!rolesPermitidos.Contains(nuevoRol))
                 return false;
@@ -118,7 +140,6 @@ namespace Veterinaria.Repositories
             if (usuario == null || !usuario.Activo)
                 return false;
 
-            // No realizar cambios innecesarios
             if (usuario.Rol == nuevoRol)
                 return false;
 
@@ -140,16 +161,13 @@ namespace Veterinaria.Repositories
             usuario.Rol = nuevoRol;
 
             _context.SaveChanges();
-
             return true;
         }
-
 
         public bool TieneFichaVeterinario(int idUsuario)
         {
             return _context.Veterinarios.Any(v =>
                 v.IdUsuario == idUsuario);
         }
-
     }
 }

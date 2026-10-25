@@ -1,3 +1,4 @@
+
 using Veterinaria.Models;
 
 namespace Veterinaria.Interfaces
@@ -9,5 +10,9 @@ namespace Veterinaria.Interfaces
         void Crear(Especie especie);
         void Editar(Especie especie);
         void Eliminar(int id);
+
+        // Paginación por servidor
+        (IEnumerable<Especie> Especies, int Total)
+            ObtenerPaginadas(int pagina, int cantidadPorPagina);
     }
 }

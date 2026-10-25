@@ -1,0 +1,306 @@
+
+@{
+    ViewData["Title"] = "Gestión de Especies con Vue";
+}
+
+<h1>Gestión de Especies - Vue.js</h1>
+<p>Administración de especies sin recargar la página.</p>
+
+@Html.AntiForgeryToken()
+
+<div id="appEspecies" v-cloak>
+
+    <!-- Mensajes -->
+    <div v-if="mensaje"
+         class="alert"
+         :class="esError ? 'alert-danger' : 'alert-success'">
+        {{ mensaje }}
+    </div>
+
+    <!-- Formulario -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">
+                {{ editando ? 'Editar especie' : 'Nueva especie' }}
+            </h5>
+        </div>
+
+        <div class="card-body">
+            <form v-on:submit.prevent="guardar">
+
+                <div class="mb-3">
+                    <label class="form-label">Nombre</label>
+                    <input type="text"
+                           class="form-control"
+                           v-model="formulario.nombre"
+                           maxlength="100"
+                           required />
+                </div>
+
+                <div class="form-check mb-3">
+                    <input type="checkbox"
+                           class="form-check-input"
+                           id="activo"
+                           v-model="formulario.activo" />
+
+                    <label class="form-check-label"
+                           for="activo">
+                        Activo
+                    </label>
+                </div>
+
+                <button type="submit"
+                        class="btn btn-primary"
+                        :disabled="guardando">
+                    {{ editando ? 'Guardar cambios' : 'Registrar especie' }}
+                </button>
+
+                <button type="button"
+                        class="btn btn-secondary ms-2"
+                        v-on:click="cancelar">
+                    Cancelar
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabla -->
+    <h4>Listado de especies</h4>
+
+    <div v-if="cargando" class="alert alert-info">
+        Cargando especies...
+    </div>
+
+    <table v-else class="table table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Activo</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            <tr v-for="especie in especies"
+                :key="especie.idEspecie">
+
+                <td>{{ especie.idEspecie }}</td>
+                <td>{{ especie.nombre }}</td>
+
+                <td>
+                    {{ especie.activo ? 'Sí' : 'No' }}
+                </td>
+
+                <td>
+                    <button class="btn btn-warning btn-sm me-2"
+                            v-on:click="editar(especie)">
+                        Editar
+                    </button>
+
+                    <button class="btn btn-danger btn-sm"
+                            v-on:click="eliminar(especie)">
+                        Eliminar
+                    </button>
+                </td>
+            </tr>
+
+            <tr v-if="especies.length === 0">
+                <td colspan="4" class="text-center">
+                    No hay especies registradas.
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <a href="/Especie" class="btn btn-outline-secondary">
+        Volver al listado MVC
+    </a>
+
+</div>
+
+<style>
+    [v-cloak] {
+        display: none;
+    }
+</style>
+
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+
+<script>
+    Vue.createApp({
+
+        data() {
+            return {
+                especies: [],
+                cargando: false,
+                guardando: false,
+                editando: false,
+                mensaje: "",
+                esError: false,
+
+                formulario: {
+                    idEspecie: 0,
+                    nombre: "",
+                    activo: true
+                }
+            };
+        },
+
+        mounted() {
+            this.cargarEspecies();
+        },
+
+        methods: {
+
+            mostrarMensaje(texto, error = false) {
+                this.mensaje = texto;
+                this.esError = error;
+            },
+
+            async cargarEspecies() {
+                this.cargando = true;
+
+                try {
+                    const respuesta = await fetch(
+                        "/api/vue/especies"
+                    );
+
+                    if (!respuesta.ok)
+                        throw new Error(
+                            "No se pudieron cargar las especies."
+                        );
+
+                    this.especies = await respuesta.json();
+
+                } catch (error) {
+                    this.mostrarMensaje(error.message, true);
+
+                } finally {
+                    this.cargando = false;
+                }
+            },
+
+            editar(especie) {
+                this.editando = true;
+
+                this.formulario = {
+                    idEspecie: especie.idEspecie,
+                    nombre: especie.nombre,
+                    activo: especie.activo
+                };
+
+                this.mensaje = "";
+                window.scrollTo(0, 0);
+            },
+
+            cancelar() {
+                this.editando = false;
+
+                this.formulario = {
+                    idEspecie: 0,
+                    nombre: "",
+                    activo: true
+                };
+            },
+
+            async guardar() {
+                if (this.guardando) return;
+
+                const nombre = this.formulario.nombre.trim();
+
+                if (!nombre) {
+                    this.mostrarMensaje(
+                        "Ingrese un nombre.",
+                        true
+                    );
+                    return;
+                }
+
+                this.guardando = true;
+
+                const url = this.editando
+                    ? "/api/vue/especies/" + this.formulario.idEspecie
+                    : "/api/vue/especies";
+
+                const metodo = this.editando ? "PUT" : "POST";
+
+                try {
+                    const token = document.querySelector(
+                        'input[name="__RequestVerificationToken"]'
+                    ).value;
+
+                    const respuesta = await fetch(url, {
+                        method: metodo,
+                        headers: {
+                            "Content-Type": "application/json",
+                            "RequestVerificationToken": token
+                        },
+                        body: JSON.stringify({
+                            nombre: nombre,
+                            activo: this.formulario.activo
+                        })
+                    });
+
+                    const datos = await respuesta.json();
+
+                    if (!respuesta.ok)
+                        throw new Error(
+                            datos.mensaje || "Error al guardar."
+                        );
+
+                    this.cancelar();
+                    await this.cargarEspecies();
+
+                    this.mostrarMensaje(datos.mensaje);
+
+                } catch (error) {
+                    this.mostrarMensaje(error.message, true);
+
+                } finally {
+                    this.guardando = false;
+                }
+            },
+
+            async eliminar(especie) {
+                const confirmar = confirm(
+                    "¿Eliminar la especie " + especie.nombre + "?"
+                );
+
+                if (!confirmar) return;
+
+                try {
+                    const token = document.querySelector(
+                        'input[name="__RequestVerificationToken"]'
+                    ).value;
+
+                    const respuesta = await fetch(
+                        "/api/vue/especies/" + especie.idEspecie,
+                        {
+                            method: "DELETE",
+                            headers: {
+                                "RequestVerificationToken": token
+                            }
+                        }
+                    );
+
+                    const datos = await respuesta.json();
+
+                    if (!respuesta.ok)
+                        throw new Error(
+                            datos.mensaje || "Error al eliminar."
+                        );
+
+                    this.cancelar();
+                    await this.cargarEspecies();
+
+                    this.mostrarMensaje(datos.mensaje);
+
+                } catch (error) {
+                    this.mostrarMensaje(error.message, true);
+                }
+            }
+        }
+
+    }).mount("#appEspecies");
+</script>

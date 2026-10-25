@@ -25,7 +25,7 @@ namespace Veterinaria.Controllers
             _passwordHasher = new PasswordHasher<Usuario>();
         }
 
-        // Login
+        // LOGIN - GET
         [HttpGet]
         [AllowAnonymous]
         public IActionResult Login()
@@ -33,10 +33,12 @@ namespace Veterinaria.Controllers
             return View();
         }
 
+        // LOGIN - POST
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(string email, string password)
+        public async Task<IActionResult> Login(
+            string email, string password)
         {
             if (string.IsNullOrWhiteSpace(email) ||
                 string.IsNullOrWhiteSpace(password))
@@ -73,7 +75,10 @@ namespace Veterinaria.Controllers
 
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.NameIdentifier, usuario.IdUsuario.ToString()),
+                new Claim(
+                    ClaimTypes.NameIdentifier,
+                    usuario.IdUsuario.ToString()),
+
                 new Claim(ClaimTypes.Name, usuario.Nombre),
                 new Claim(ClaimTypes.Email, usuario.Email),
                 new Claim(ClaimTypes.Role, usuario.Rol),
@@ -93,7 +98,7 @@ namespace Veterinaria.Controllers
             return RedirectToAction("Index", "Home");
         }
 
-        // Logout
+        // LOGOUT
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
@@ -105,12 +110,13 @@ namespace Veterinaria.Controllers
             return RedirectToAction("Index", "Home");
         }
 
-        // Perfil
+        // PERFIL
         [HttpGet]
         [Authorize]
         public IActionResult Perfil()
         {
-            var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var idClaim = User.FindFirst(
+                ClaimTypes.NameIdentifier)?.Value;
 
             if (!int.TryParse(idClaim, out int idUsuario))
                 return Unauthorized();
@@ -123,12 +129,13 @@ namespace Veterinaria.Controllers
             return View(usuario);
         }
 
-        // Editar perfil
+        // EDITAR PERFIL - GET
         [HttpGet]
         [Authorize]
         public IActionResult EditarPerfil()
         {
-            var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var idClaim = User.FindFirst(
+                ClaimTypes.NameIdentifier)?.Value;
 
             if (!int.TryParse(idClaim, out int idUsuario))
                 return Unauthorized();
@@ -141,13 +148,15 @@ namespace Veterinaria.Controllers
             return View(usuario);
         }
 
+        // EDITAR PERFIL - POST
         [HttpPost]
         [Authorize]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditarPerfil(
             string nombre, string email)
         {
-            var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var idClaim = User.FindFirst(
+                ClaimTypes.NameIdentifier)?.Value;
 
             if (!int.TryParse(idClaim, out int idUsuario))
                 return Unauthorized();
@@ -160,22 +169,29 @@ namespace Veterinaria.Controllers
             nombre = nombre?.Trim() ?? "";
             email = email?.Trim() ?? "";
 
-            if (string.IsNullOrWhiteSpace(nombre) || nombre.Length > 100)
-                ModelState.AddModelError("Nombre", "Ingrese un nombre válido.");
+            if (string.IsNullOrWhiteSpace(nombre) ||
+                nombre.Length > 100)
+            {
+                ModelState.AddModelError(
+                    "Nombre", "Ingrese un nombre válido.");
+            }
 
             if (string.IsNullOrWhiteSpace(email) ||
                 email.Length > 150 ||
-                !new System.ComponentModel.DataAnnotations.EmailAddressAttribute()
-                    .IsValid(email))
+                !new System.ComponentModel.DataAnnotations
+                    .EmailAddressAttribute().IsValid(email))
             {
-                ModelState.AddModelError("Email", "Ingrese un email válido.");
+                ModelState.AddModelError(
+                    "Email", "Ingrese un email válido.");
             }
 
             var otroUsuario = _repositorioUsuario.ObtenerPorEmail(email);
 
-            if (otroUsuario != null && otroUsuario.IdUsuario != idUsuario)
+            if (otroUsuario != null &&
+                otroUsuario.IdUsuario != idUsuario)
             {
-                ModelState.AddModelError("Email", "El email ya está registrado.");
+                ModelState.AddModelError(
+                    "Email", "El email ya está registrado.");
             }
 
             if (!ModelState.IsValid)
@@ -186,28 +202,31 @@ namespace Veterinaria.Controllers
             }
 
             var actualizado = _repositorioUsuario.ActualizarPerfil(
-                idUsuario, nombre, email
-            );
+                idUsuario, nombre, email);
 
             if (!actualizado)
             {
-                TempData["Error"] = "No se pudo actualizar el perfil.";
+                TempData["Error"] =
+                    "No se pudo actualizar el perfil.";
+
                 return RedirectToAction(nameof(Perfil));
             }
 
-            var usuarioActualizado = _repositorioUsuario.ObtenerPorId(idUsuario);
+            var usuarioActualizado =
+                _repositorioUsuario.ObtenerPorId(idUsuario);
 
             if (usuarioActualizado == null)
                 return NotFound();
 
             await RenovarClaims(usuarioActualizado);
 
-            TempData["Mensaje"] = "Perfil actualizado correctamente.";
+            TempData["Mensaje"] =
+                "Perfil actualizado correctamente.";
 
             return RedirectToAction(nameof(Perfil));
         }
 
-        // Cambiar contraseña
+        // CAMBIAR CONTRASEÑA - GET
         [HttpGet]
         [Authorize]
         public IActionResult CambiarPassword()
@@ -215,6 +234,7 @@ namespace Veterinaria.Controllers
             return View();
         }
 
+        // CAMBIAR CONTRASEÑA - POST
         [HttpPost]
         [Authorize]
         [ValidateAntiForgeryToken]
@@ -223,7 +243,8 @@ namespace Veterinaria.Controllers
             string passwordNueva,
             string confirmarPassword)
         {
-            var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var idClaim = User.FindFirst(
+                ClaimTypes.NameIdentifier)?.Value;
 
             if (!int.TryParse(idClaim, out int idUsuario))
                 return Unauthorized();
@@ -242,7 +263,9 @@ namespace Veterinaria.Controllers
 
             if (passwordNueva.Length < 8)
             {
-                ViewBag.Error = "La contraseña debe tener al menos 8 caracteres.";
+                ViewBag.Error =
+                    "La contraseña debe tener al menos 8 caracteres.";
+
                 return View();
             }
 
@@ -253,52 +276,57 @@ namespace Veterinaria.Controllers
             }
 
             var resultado = _passwordHasher.VerifyHashedPassword(
-                usuario, usuario.Clave, passwordActual
-            );
+                usuario, usuario.Clave, passwordActual);
 
             if (resultado == PasswordVerificationResult.Failed)
             {
-                ViewBag.Error = "La contraseña actual es incorrecta.";
+                ViewBag.Error =
+                    "La contraseña actual es incorrecta.";
+
                 return View();
             }
 
             var mismaClave = _passwordHasher.VerifyHashedPassword(
-                usuario, usuario.Clave, passwordNueva
-            );
+                usuario, usuario.Clave, passwordNueva);
 
             if (mismaClave != PasswordVerificationResult.Failed)
             {
-                ViewBag.Error = "La nueva contraseña debe ser diferente.";
+                ViewBag.Error =
+                    "La nueva contraseña debe ser diferente.";
+
                 return View();
             }
 
             var nuevoHash = _passwordHasher.HashPassword(
-                usuario, passwordNueva
-            );
+                usuario, passwordNueva);
 
             var actualizado = _repositorioUsuario.ActualizarPassword(
-                idUsuario, nuevoHash
-            );
+                idUsuario, nuevoHash);
 
             if (!actualizado)
             {
-                ViewBag.Error = "No se pudo cambiar la contraseña.";
+                ViewBag.Error =
+                    "No se pudo cambiar la contraseña.";
+
                 return View();
             }
 
-            TempData["Mensaje"] = "Contraseña actualizada correctamente.";
+            TempData["Mensaje"] =
+                "Contraseña actualizada correctamente.";
 
             return RedirectToAction(nameof(Perfil));
         }
 
-        // Actualizar avatar
+        // ACTUALIZAR AVATAR
         [HttpPost]
         [Authorize]
         [ValidateAntiForgeryToken]
         [RequestSizeLimit(6 * 1024 * 1024)]
-        public async Task<IActionResult> ActualizarAvatar(IFormFile? avatar)
+        public async Task<IActionResult> ActualizarAvatar(
+            IFormFile? avatar)
         {
-            var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var idClaim = User.FindFirst(
+                ClaimTypes.NameIdentifier)?.Value;
 
             if (!int.TryParse(idClaim, out int idUsuario))
                 return Unauthorized();
@@ -316,11 +344,14 @@ namespace Veterinaria.Controllers
 
             if (avatar.Length > 5 * 1024 * 1024)
             {
-                TempData["Error"] = "La imagen no puede superar los 5 MB.";
+                TempData["Error"] =
+                    "La imagen no puede superar los 5 MB.";
+
                 return RedirectToAction(nameof(Perfil));
             }
 
-            var extension = Path.GetExtension(avatar.FileName).ToLowerInvariant();
+            var extension = Path.GetExtension(
+                avatar.FileName).ToLowerInvariant();
 
             var tiposPermitidos = new Dictionary<string, string>
             {
@@ -330,23 +361,32 @@ namespace Veterinaria.Controllers
                 { ".webp", "image/webp" }
             };
 
-            if (!tiposPermitidos.TryGetValue(extension, out var tipo) ||
-                !string.Equals(avatar.ContentType, tipo,
+            if (!tiposPermitidos.TryGetValue(
+                    extension, out var tipo) ||
+                !string.Equals(
+                    avatar.ContentType,
+                    tipo,
                     StringComparison.OrdinalIgnoreCase))
             {
-                TempData["Error"] = "Formato de imagen no permitido.";
+                TempData["Error"] =
+                    "Formato de imagen no permitido.";
+
                 return RedirectToAction(nameof(Perfil));
             }
 
-            // Validar contenido
+            // Validar firma del archivo
             var firma = new byte[12];
 
             using (var lectura = avatar.OpenReadStream())
             {
-                var leidos = await lectura.ReadAsync(firma.AsMemory());
+                var leidos = await lectura.ReadAsync(
+                    firma.AsMemory());
+
                 if (leidos < 12)
                 {
-                    TempData["Error"] = "Archivo de imagen inválido.";
+                    TempData["Error"] =
+                        "Archivo de imagen inválido.";
+
                     return RedirectToAction(nameof(Perfil));
                 }
             }
@@ -354,22 +394,31 @@ namespace Veterinaria.Controllers
             bool esImagen = extension switch
             {
                 ".jpg" or ".jpeg" =>
-                    firma[0] == 0xFF && firma[1] == 0xD8 && firma[2] == 0xFF,
+                    firma[0] == 0xFF &&
+                    firma[1] == 0xD8 &&
+                    firma[2] == 0xFF,
 
                 ".png" =>
                     firma.Take(8).SequenceEqual(
-                        new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }),
+                        new byte[]
+                        {
+                            137, 80, 78, 71, 13, 10, 26, 10
+                        }),
 
                 ".webp" =>
-                    System.Text.Encoding.ASCII.GetString(firma, 0, 4) == "RIFF" &&
-                    System.Text.Encoding.ASCII.GetString(firma, 8, 4) == "WEBP",
+                    System.Text.Encoding.ASCII
+                        .GetString(firma, 0, 4) == "RIFF" &&
+                    System.Text.Encoding.ASCII
+                        .GetString(firma, 8, 4) == "WEBP",
 
                 _ => false
             };
 
             if (!esImagen)
             {
-                TempData["Error"] = "El archivo no es una imagen válida.";
+                TempData["Error"] =
+                    "El archivo no es una imagen válida.";
+
                 return RedirectToAction(nameof(Perfil));
             }
 
@@ -381,11 +430,17 @@ namespace Veterinaria.Controllers
 
             Directory.CreateDirectory(carpeta);
 
-            var nombreArchivo = $"usuario_{idUsuario}_{Guid.NewGuid():N}{extension}";
-            var rutaFisica = Path.Combine(carpeta, nombreArchivo);
-            var rutaAvatar = $"/uploads/usuarios/{nombreArchivo}";
+            var nombreArchivo =
+                $"usuario_{idUsuario}_{Guid.NewGuid():N}{extension}";
 
-            using (var stream = new FileStream(rutaFisica, FileMode.CreateNew))
+            var rutaFisica = Path.Combine(
+                carpeta, nombreArchivo);
+
+            var rutaAvatar =
+                $"/uploads/usuarios/{nombreArchivo}";
+
+            using (var stream = new FileStream(
+                rutaFisica, FileMode.CreateNew))
             {
                 await avatar.CopyToAsync(stream);
             }
@@ -396,8 +451,7 @@ namespace Veterinaria.Controllers
             try
             {
                 actualizado = _repositorioUsuario.ActualizarAvatar(
-                    idUsuario, rutaAvatar
-                );
+                    idUsuario, rutaAvatar);
             }
             catch
             {
@@ -408,43 +462,53 @@ namespace Veterinaria.Controllers
             if (!actualizado)
             {
                 System.IO.File.Delete(rutaFisica);
-                TempData["Error"] = "No se pudo actualizar el avatar.";
+
+                TempData["Error"] =
+                    "No se pudo actualizar el avatar.";
+
                 return RedirectToAction(nameof(Perfil));
             }
 
             // Eliminar avatar anterior
             if (!string.IsNullOrWhiteSpace(avatarAnterior) &&
                 avatarAnterior.StartsWith(
-                    "/uploads/usuarios/", StringComparison.Ordinal) &&
+                    "/uploads/usuarios/",
+                    StringComparison.Ordinal) &&
                 Path.GetFileName(avatarAnterior) ==
-                    avatarAnterior.Substring("/uploads/usuarios/".Length))
+                    avatarAnterior.Substring(
+                        "/uploads/usuarios/".Length))
             {
                 var rutaAnterior = Path.Combine(
-                    carpeta, Path.GetFileName(avatarAnterior)
-                );
+                    carpeta,
+                    Path.GetFileName(avatarAnterior));
 
                 if (System.IO.File.Exists(rutaAnterior))
                     System.IO.File.Delete(rutaAnterior);
             }
 
-            var usuarioActualizado = _repositorioUsuario.ObtenerPorId(idUsuario);
+            var usuarioActualizado =
+                _repositorioUsuario.ObtenerPorId(idUsuario);
 
             if (usuarioActualizado == null)
                 return NotFound();
 
             await RenovarClaims(usuarioActualizado);
 
-            TempData["Mensaje"] = "Avatar actualizado correctamente.";
+            TempData["Mensaje"] =
+                "Avatar actualizado correctamente.";
 
             return RedirectToAction(nameof(Perfil));
         }
 
-        // Renovar sesión
+        // RENOVAR CLAIMS DE LA SESIÓN
         private async Task RenovarClaims(Usuario usuario)
         {
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.NameIdentifier, usuario.IdUsuario.ToString()),
+                new Claim(
+                    ClaimTypes.NameIdentifier,
+                    usuario.IdUsuario.ToString()),
+
                 new Claim(ClaimTypes.Name, usuario.Nombre),
                 new Claim(ClaimTypes.Email, usuario.Email),
                 new Claim(ClaimTypes.Role, usuario.Rol),
@@ -462,15 +526,36 @@ namespace Veterinaria.Controllers
             );
         }
 
-        // GET: Usuario
+        // LISTADO DE USUARIOS CON PAGINACIÓN
         [Authorize(Roles = "Administrador")]
-        public IActionResult Index()
+        public IActionResult Index(int pagina = 1)
         {
-            var usuarios = _repositorioUsuario.ObtenerTodos();
-            return View(usuarios);
+            const int cantidadPorPagina = 3;
+
+            pagina = Math.Max(1, pagina);
+
+            var resultado = _repositorioUsuario.ObtenerPaginados(
+                pagina, cantidadPorPagina);
+
+            int totalPaginas = (int)Math.Ceiling(
+                (double)resultado.Total / cantidadPorPagina);
+
+            if (totalPaginas > 0 && pagina > totalPaginas)
+            {
+                pagina = totalPaginas;
+
+                resultado = _repositorioUsuario.ObtenerPaginados(
+                    pagina, cantidadPorPagina);
+            }
+
+            ViewBag.PaginaActual = pagina;
+            ViewBag.TotalPaginas = totalPaginas;
+            ViewBag.TotalRegistros = resultado.Total;
+
+            return View(resultado.Usuarios);
         }
 
-        // GET: Usuario/Details
+        // DETALLES
         [Authorize(Roles = "Administrador")]
         public IActionResult Details(int id)
         {
@@ -482,14 +567,14 @@ namespace Veterinaria.Controllers
             return View(usuario);
         }
 
-        // GET: Usuario/Create
+        // CREAR USUARIO - GET
         [Authorize(Roles = "Administrador")]
         public IActionResult Create()
         {
             return View();
         }
 
-        // POST: Usuario/Create
+        // CREAR USUARIO - POST
         [HttpPost]
         [Authorize(Roles = "Administrador")]
         [ValidateAntiForgeryToken]
@@ -503,13 +588,14 @@ namespace Veterinaria.Controllers
                 );
 
                 _repositorioUsuario.Crear(usuario);
+
                 return RedirectToAction(nameof(Index));
             }
 
             return View(usuario);
         }
 
-        // GET: Usuario/Edit
+        // EDITAR USUARIO - GET
         [Authorize(Roles = "Administrador")]
         public IActionResult Edit(int id)
         {
@@ -521,26 +607,23 @@ namespace Veterinaria.Controllers
             return View(usuario);
         }
 
-        // POST: Usuario/Edit
+        // EDITAR USUARIO - POST
         [HttpPost]
         [Authorize(Roles = "Administrador")]
         [ValidateAntiForgeryToken]
         public IActionResult Edit(int id, Usuario usuario)
         {
-
             if (id != usuario.IdUsuario)
                 return NotFound();
 
-
-            var usuarioActual = _repositorioUsuario.ObtenerPorId(id);
+            var usuarioActual =
+                _repositorioUsuario.ObtenerPorId(id);
 
             if (usuarioActual == null)
                 return NotFound();
 
-
             usuario.Nombre = usuario.Nombre?.Trim() ?? "";
             usuario.Email = usuario.Email?.Trim() ?? "";
-
 
             ModelState.Remove(nameof(Usuario.Clave));
             ModelState.Remove(nameof(Usuario.Rol));
@@ -556,17 +639,15 @@ namespace Veterinaria.Controllers
                     "Ingrese un nombre válido.");
             }
 
-
             if (string.IsNullOrWhiteSpace(usuario.Email) ||
                 usuario.Email.Length > 150 ||
-                !new System.ComponentModel.DataAnnotations.EmailAddressAttribute()
-                    .IsValid(usuario.Email))
+                !new System.ComponentModel.DataAnnotations
+                    .EmailAddressAttribute().IsValid(usuario.Email))
             {
                 ModelState.AddModelError(
                     nameof(Usuario.Email),
                     "Ingrese un correo electrónico válido.");
             }
-
 
             if (!string.IsNullOrWhiteSpace(usuario.Email))
             {
@@ -588,7 +669,6 @@ namespace Veterinaria.Controllers
                 usuarioActual.Email = usuario.Email;
                 usuarioActual.Activo = usuario.Activo;
 
-
                 _repositorioUsuario.Editar(usuarioActual);
 
                 TempData["Mensaje"] =
@@ -602,25 +682,24 @@ namespace Veterinaria.Controllers
             return View(usuario);
         }
 
-        // Cambiar rol de usuario
+        // CAMBIAR ROL
         [HttpPost]
         [Authorize(Roles = "Administrador")]
         [ValidateAntiForgeryToken]
-        public IActionResult CambiarRol(int id, string nuevoRol)
+        public IActionResult CambiarRol(
+            int id, string nuevoRol)
         {
             var usuario = _repositorioUsuario.ObtenerPorId(id);
 
             if (usuario == null)
                 return NotFound();
 
-            // Identificar al administrador conectado
             var idClaim = User.FindFirst(
                 ClaimTypes.NameIdentifier)?.Value;
 
             if (!int.TryParse(idClaim, out int idActual))
                 return Unauthorized();
 
-            // Impedir cambiar el propio rol
             if (id == idActual)
             {
                 TempData["Error"] =
@@ -629,7 +708,6 @@ namespace Veterinaria.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            // No modificar usuarios inactivos
             if (!usuario.Activo)
             {
                 TempData["Error"] =
@@ -640,10 +718,10 @@ namespace Veterinaria.Controllers
 
             string[] rolesPermitidos =
             {
-        "Administrador",
-        "Empleado",
-        "Veterinario"
-    };
+                "Administrador",
+                "Empleado",
+                "Veterinario"
+            };
 
             if (string.IsNullOrWhiteSpace(nuevoRol) ||
                 !rolesPermitidos.Contains(nuevoRol))
@@ -654,7 +732,6 @@ namespace Veterinaria.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            // Verificar si tiene ficha profesional
             bool tieneFicha = _repositorioUsuario
                 .TieneFichaVeterinario(id);
 
@@ -675,7 +752,6 @@ namespace Veterinaria.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            // Actualizar mediante el repositorio
             bool actualizado = _repositorioUsuario
                 .CambiarRol(id, nuevoRol);
 
@@ -694,8 +770,7 @@ namespace Veterinaria.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-
-        // GET: Usuario/Delete
+        // ELIMINAR USUARIO - GET
         [Authorize(Roles = "Administrador")]
         public IActionResult Delete(int id)
         {
@@ -707,13 +782,14 @@ namespace Veterinaria.Controllers
             return View(usuario);
         }
 
-        // POST: Usuario/Delete
+        // ELIMINAR USUARIO - POST
         [HttpPost, ActionName("Delete")]
         [Authorize(Roles = "Administrador")]
         [ValidateAntiForgeryToken]
         public IActionResult DeleteConfirmed(int id)
         {
             _repositorioUsuario.Eliminar(id);
+
             return RedirectToAction(nameof(Index));
         }
     }

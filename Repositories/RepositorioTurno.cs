@@ -19,6 +19,7 @@ namespace Veterinaria.Repositories
         {
             return _context.Turnos
                 .Include(t => t.Mascota)
+                .Include(t => t.Usuario)
                 .ToList();
         }
 
@@ -26,7 +27,31 @@ namespace Veterinaria.Repositories
         {
             return _context.Turnos
                 .Include(t => t.Mascota)
+                .Include(t => t.Usuario)
                 .FirstOrDefault(t => t.IdTurno == id);
+        }
+
+        // Paginación desde MySQL
+        public (IEnumerable<Turno> Turnos, int Total)
+            ObtenerPaginados(int pagina, int cantidadPorPagina)
+        {
+            pagina = Math.Max(1, pagina);
+            cantidadPorPagina = Math.Clamp(cantidadPorPagina, 1, 100);
+
+            var consulta = _context.Turnos.AsNoTracking();
+
+            int total = consulta.Count();
+
+            var turnos = consulta
+                .OrderByDescending(t => t.FechaHora)
+                .ThenByDescending(t => t.IdTurno)
+                .Skip((pagina - 1) * cantidadPorPagina)
+                .Take(cantidadPorPagina)
+                .Include(t => t.Mascota)
+                .Include(t => t.Usuario)
+                .ToList();
+
+            return (turnos, total);
         }
 
         // Turnos pendientes sin consulta asociada

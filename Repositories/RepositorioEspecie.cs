@@ -1,3 +1,5 @@
+
+using Microsoft.EntityFrameworkCore;
 using Veterinaria.Data;
 using Veterinaria.Interfaces;
 using Veterinaria.Models;
@@ -16,6 +18,27 @@ namespace Veterinaria.Repositories
         public IEnumerable<Especie> ObtenerTodos()
         {
             return _context.Especies.ToList();
+        }
+
+        // Paginación desde MySQL
+        public (IEnumerable<Especie> Especies, int Total)
+            ObtenerPaginadas(int pagina, int cantidadPorPagina)
+        {
+            pagina = Math.Max(1, pagina);
+            cantidadPorPagina = Math.Clamp(cantidadPorPagina, 1, 100);
+
+            var consulta = _context.Especies.AsNoTracking();
+
+            int total = consulta.Count();
+
+            var especies = consulta
+                .OrderBy(e => e.Nombre)
+                .ThenBy(e => e.IdEspecie)
+                .Skip((pagina - 1) * cantidadPorPagina)
+                .Take(cantidadPorPagina)
+                .ToList();
+
+            return (especies, total);
         }
 
         public Especie? ObtenerPorId(int id)

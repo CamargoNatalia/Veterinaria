@@ -1,4 +1,3 @@
-@model IEnumerable<Veterinaria.Models.Cliente>
 
 @{
     ViewData["Title"] = "Clientes";
@@ -9,9 +8,7 @@
 }
 
 <h1>Gestión de Clientes</h1>
-
 <hr />
-
 
 @if (TempData["Mensaje"] != null)
 {
@@ -36,72 +33,272 @@
     </div>
 }
 
+<div id="clientesApp"
+     data-puede-administrar="@puedeAdministrar.ToString().ToLowerInvariant()">
 
-<div class="table-responsive">
+    <!-- Buscador AJAX -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label for="buscarCliente" class="form-label">
+                Buscar cliente
+            </label>
 
-    <table class="table table-striped table-bordered align-middle">
+            <input type="search"
+                   id="buscarCliente"
+                   class="form-control"
+                   maxlength="100"
+                   placeholder="Nombre, apellido o DNI..."
+                   autocomplete="off" />
+        </div>
+    </div>
 
-        <thead class="table-dark">
-            <tr>
-                <th>Nombre</th>
-                <th>Apellido</th>
-                <th>DNI</th>
-                <th>Teléfono</th>
-                <th>Correo</th>
-                <th>Dirección</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
+    <div id="errorBusqueda"
+         class="alert alert-danger d-none"
+         role="alert">
+    </div>
 
-        <tbody>
-            @foreach (var cliente in Model)
-            {
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered align-middle">
+            <thead class="table-dark">
                 <tr>
-                    <td>@cliente.Nombre</td>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>DNI</th>
+                    <th>Teléfono</th>
+                    <th>Correo</th>
+                    <th>Dirección</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
 
-                    <td>@cliente.Apellido</td>
-
-                    <td>@cliente.Dni</td>
-
-                    <td>@cliente.Telefono</td>
-
-                    <td>@cliente.Correo</td>
-
-                    <td>@cliente.Direccion</td>
-
-                    <td>
-                        <div class="d-flex gap-1 flex-wrap">
-
-                            <a asp-action="Details" asp-route-id="@cliente.IdCliente" class="btn btn-info btn-sm">
-                                Ver
-                            </a>
-
-                            <!-- Solo Administrador y Empleado -->
-                            @if (puedeAdministrar)
-                            {
-                                <a asp-action="Edit" asp-route-id="@cliente.IdCliente" class="btn btn-warning btn-sm">
-                                    Editar
-                                </a>
-
-                                <a asp-action="Delete" asp-route-id="@cliente.IdCliente" class="btn btn-danger btn-sm">
-                                    Eliminar
-                                </a>
-                            }
-
-                        </div>
+            <tbody id="tablaClientes">
+                <tr>
+                    <td colspan="7" class="text-center">
+                        Cargando clientes...
                     </td>
                 </tr>
-            }
+            </tbody>
+        </table>
+    </div>
 
-            @if (!Model.Any())
-            {
-                <tr>
-                    <td colspan="7" class="text-center text-muted">
-                        No hay clientes registrados.
-                    </td>
-                </tr>
-            }
-        </tbody>
+    <div class="d-flex justify-content-between
+                align-items-center flex-wrap gap-2">
 
-    </table>
+        <span id="totalClientes" class="text-muted"></span>
+
+        <div class="d-flex align-items-center gap-2">
+            <button type="button"
+                    id="btnAnterior"
+                    class="btn btn-outline-primary btn-sm">
+                Anterior
+            </button>
+
+            <span id="infoPagina"></span>
+
+            <button type="button"
+                    id="btnSiguiente"
+                    class="btn btn-outline-primary btn-sm">
+                Siguiente
+            </button>
+        </div>
+    </div>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+    const app = document.getElementById("clientesApp");
+    const puedeAdministrar =
+        app.dataset.puedeAdministrar === "true";
+
+    const buscador = document.getElementById("buscarCliente");
+    const tabla = document.getElementById("tablaClientes");
+    const total = document.getElementById("totalClientes");
+    const infoPagina = document.getElementById("infoPagina");
+    const anterior = document.getElementById("btnAnterior");
+    const siguiente = document.getElementById("btnSiguiente");
+    const errorBusqueda = document.getElementById("errorBusqueda");
+
+    let paginaActual = 1;
+    let totalPaginas = 0;
+    let temporizador;
+    let solicitudActual = 0;
+
+    function crearBoton(texto, accion, id, clase) {
+        const enlace = document.createElement("a");
+        enlace.href = "/Cliente/" + accion + "/" + id;
+        enlace.className = clase;
+        enlace.textContent = texto;
+        return enlace;
+    }
+
+    function crearCelda(fila, valor) {
+        const celda = document.createElement("td");
+        celda.textContent = valor ?? "";
+        fila.appendChild(celda);
+    }
+
+    function mostrarMensajeTabla(mensaje) {
+        tabla.replaceChildren();
+
+        const fila = document.createElement("tr");
+        const celda = document.createElement("td");
+
+        celda.colSpan = 7;
+        celda.className = "text-center text-muted";
+        celda.textContent = mensaje;
+
+        fila.appendChild(celda);
+        tabla.appendChild(fila);
+    }
+
+    function mostrarClientes(clientes) {
+        tabla.replaceChildren();
+
+        if (clientes.length === 0) {
+            mostrarMensajeTabla("No se encontraron clientes.");
+            return;
+        }
+
+        clientes.forEach(cliente => {
+            const fila = document.createElement("tr");
+
+            crearCelda(fila, cliente.nombre);
+            crearCelda(fila, cliente.apellido);
+            crearCelda(fila, cliente.dni);
+            crearCelda(fila, cliente.telefono);
+            crearCelda(fila, cliente.correo);
+            crearCelda(fila, cliente.direccion);
+
+            const celdaAcciones = document.createElement("td");
+            const botones = document.createElement("div");
+
+            botones.className = "d-flex gap-1 flex-wrap";
+
+            botones.appendChild(
+                crearBoton(
+                    "Ver",
+                    "Details",
+                    cliente.idCliente,
+                    "btn btn-info btn-sm"
+                )
+            );
+
+            if (puedeAdministrar) {
+                botones.appendChild(
+                    crearBoton(
+                        "Editar",
+                        "Edit",
+                        cliente.idCliente,
+                        "btn btn-warning btn-sm"
+                    )
+                );
+
+                botones.appendChild(
+                    crearBoton(
+                        "Eliminar",
+                        "Delete",
+                        cliente.idCliente,
+                        "btn btn-danger btn-sm"
+                    )
+                );
+            }
+
+            celdaAcciones.appendChild(botones);
+            fila.appendChild(celdaAcciones);
+            tabla.appendChild(fila);
+        });
+    }
+
+    async function cargarClientes(pagina = 1) {
+        const numeroSolicitud = ++solicitudActual;
+        const busqueda = buscador.value.trim();
+
+        anterior.disabled = true;
+        siguiente.disabled = true;
+        errorBusqueda.classList.add("d-none");
+
+        const parametros = new URLSearchParams({
+            busqueda: busqueda,
+            pagina: pagina
+        });
+
+        try {
+            const respuesta = await fetch(
+                "/Cliente/Buscar?" + parametros.toString(),
+                {
+                    credentials: "same-origin",
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest"
+                    }
+                }
+            );
+
+            if (numeroSolicitud !== solicitudActual) return;
+
+            if (!respuesta.ok) {
+                throw new Error(
+                    "No se pudo obtener el listado de clientes."
+                );
+            }
+
+            const datos = await respuesta.json();
+
+            if (numeroSolicitud !== solicitudActual) return;
+
+            paginaActual = datos.paginaActual;
+            totalPaginas = datos.totalPaginas;
+
+            mostrarClientes(datos.clientes);
+
+            total.textContent =
+                "Total de clientes: " + datos.totalRegistros;
+
+            infoPagina.textContent =
+                totalPaginas === 0
+                    ? "Página 0 de 0"
+                    : "Página " + paginaActual +
+                      " de " + totalPaginas;
+
+            anterior.disabled = paginaActual <= 1;
+            siguiente.disabled =
+                paginaActual >= totalPaginas;
+
+        } catch (error) {
+            if (numeroSolicitud !== solicitudActual) return;
+
+            errorBusqueda.textContent = error.message;
+            errorBusqueda.classList.remove("d-none");
+
+            mostrarMensajeTabla(
+                "No se pudo cargar el listado."
+            );
+
+            total.textContent = "";
+            infoPagina.textContent = "";
+        }
+    }
+
+    buscador.addEventListener("input", () => {
+        clearTimeout(temporizador);
+        solicitudActual++;
+        temporizador = setTimeout(() => {
+            cargarClientes(1);
+        }, 300);
+    });
+
+    anterior.addEventListener("click", () => {
+        if (paginaActual > 1) {
+            cargarClientes(paginaActual - 1);
+        }
+    });
+
+    siguiente.addEventListener("click", () => {
+        if (paginaActual < totalPaginas) {
+            cargarClientes(paginaActual + 1);
+        }
+    });
+
+    cargarClientes();
+});
+</script>

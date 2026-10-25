@@ -1,3 +1,4 @@
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Veterinaria.Interfaces;
@@ -5,7 +6,6 @@ using Veterinaria.Models;
 
 namespace Veterinaria.Controllers
 {
-    // Acceso general a los tres roles
     [Authorize(Roles = "Administrador,Empleado,Veterinario")]
     public class ClienteController : Controller
     {
@@ -17,16 +17,63 @@ namespace Veterinaria.Controllers
         }
 
         // GET: Cliente
-        // Los tres roles pueden consultar el listado
         public IActionResult Index()
         {
-            var clientes = _repositorio.ObtenerTodos();
+            return View();
+        }
 
-            return View(clientes);
+        // GET: Cliente/Buscar
+        // Búsqueda AJAX con paginación
+        [HttpGet]
+        public IActionResult Buscar(
+            string? busqueda,
+            int pagina = 1)
+        {
+            const int cantidadPorPagina = 3;
+
+            pagina = Math.Max(1, pagina);
+
+            var resultado = _repositorio.BuscarPaginados(
+                busqueda,
+                pagina,
+                cantidadPorPagina
+            );
+
+            int totalPaginas = (int)Math.Ceiling(
+                (double)resultado.Total / cantidadPorPagina
+            );
+
+            // Evitar páginas fuera del rango
+            if (totalPaginas > 0 && pagina > totalPaginas)
+            {
+                pagina = totalPaginas;
+
+                resultado = _repositorio.BuscarPaginados(
+                    busqueda,
+                    pagina,
+                    cantidadPorPagina
+                );
+            }
+
+            return Json(new
+            {
+                clientes = resultado.Clientes.Select(c => new
+                {
+                    c.IdCliente,
+                    c.Nombre,
+                    c.Apellido,
+                    c.Dni,
+                    c.Telefono,
+                    c.Correo,
+                    c.Direccion
+                }),
+                paginaActual = pagina,
+                totalPaginas,
+                totalRegistros = resultado.Total
+            });
         }
 
         // GET: Cliente/Details/5
-        // Los tres roles pueden consultar los detalles
         public IActionResult Details(int id)
         {
             var cliente = _repositorio.ObtenerPorId(id);
@@ -38,7 +85,6 @@ namespace Veterinaria.Controllers
         }
 
         // GET: Cliente/Create
-        // Solo Administrador y Empleado
         [HttpGet]
         [Authorize(Roles = "Administrador,Empleado")]
         public IActionResult Create()

@@ -1,47 +1,158 @@
+
 @model IEnumerable<Veterinaria.Models.Raza>
 
 @{
     ViewData["Title"] = "Razas";
+
+    int paginaActual = ViewBag.PaginaActual ?? 1;
+    int totalPaginas = ViewBag.TotalPaginas ?? 0;
+    int totalRegistros = ViewBag.TotalRegistros ?? 0;
 }
 
 <h1>Razas</h1>
 
+<hr />
+
+@if (TempData["Mensaje"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Mensaje"]
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}
+
 <p>
-    <a asp-action="Create" class="btn btn-primary">Nueva Raza</a>
+    <a asp-action="Create" class="btn btn-primary">
+        Nueva Raza
+    </a>
 </p>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>Nombre</th>
-            <th>Especie</th>
-            <th>Activo</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
-
-    <tbody>
-        @foreach (var raza in Model)
-        {
+<div class="table-responsive">
+    <table class="table table-striped table-bordered align-middle">
+        <thead class="table-dark">
             <tr>
-                <td>@raza.Nombre</td>
-                <td>@raza.Especie?.Nombre</td>
-                <td>@raza.Activo</td>
-
-                <td>
-                    <a asp-action="Details" asp-route-id="@raza.IdRaza" class="btn btn-info btn-sm">
-                        Detalles
-                    </a>
-
-                    <a asp-action="Edit" asp-route-id="@raza.IdRaza" class="btn btn-warning btn-sm">
-                        Editar
-                    </a>
-
-                    <a asp-action="Delete" asp-route-id="@raza.IdRaza" class="btn btn-danger btn-sm">
-                        Eliminar
-                    </a>
-                </td>
+                <th>Nombre</th>
+                <th>Especie</th>
+                <th>Activo</th>
+                <th>Acciones</th>
             </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var raza in Model)
+            {
+                <tr>
+                    <td>@raza.Nombre</td>
+
+                    <td>
+                        @(raza.Especie?.Nombre ?? "-")
+                    </td>
+
+                    <td>
+                        @if (raza.Activo)
+                        {
+                            <span class="badge bg-success">
+                                Activa
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">
+                                Inactiva
+                            </span>
+                        }
+                    </td>
+
+                    <td>
+                        <div class="d-flex gap-1 flex-wrap">
+
+                            <a asp-action="Details"
+                               asp-route-id="@raza.IdRaza"
+                               class="btn btn-info btn-sm">
+                                Detalles
+                            </a>
+
+                            <a asp-action="Edit"
+                               asp-route-id="@raza.IdRaza"
+                               class="btn btn-warning btn-sm">
+                                Editar
+                            </a>
+
+                            <a asp-action="Delete"
+                               asp-route-id="@raza.IdRaza"
+                               class="btn btn-danger btn-sm">
+                                Eliminar
+                            </a>
+
+                        </div>
+                    </td>
+                </tr>
+            }
+
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="4"
+                        class="text-center text-muted">
+                        No hay razas registradas.
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<!-- PAGINACIÓN -->
+<div class="d-flex justify-content-between
+            align-items-center flex-wrap gap-2 mt-3">
+
+    <span class="text-muted">
+        Total de razas: @totalRegistros
+    </span>
+
+    <div class="d-flex align-items-center gap-2">
+
+        @if (paginaActual > 1)
+        {
+            <a asp-action="Index"
+               asp-route-pagina="@(paginaActual - 1)"
+               class="btn btn-outline-primary btn-sm">
+                Anterior
+            </a>
         }
-    </tbody>
-</table>
+        else
+        {
+            <button class="btn btn-outline-secondary btn-sm"
+                    disabled>
+                Anterior
+            </button>
+        }
+
+        <span>
+            Página @(totalPaginas == 0 ? 0 : paginaActual)
+            de @totalPaginas
+        </span>
+
+        @if (paginaActual < totalPaginas)
+        {
+            <a asp-action="Index"
+               asp-route-pagina="@(paginaActual + 1)"
+               class="btn btn-outline-primary btn-sm">
+                Siguiente
+            </a>
+        }
+        else
+        {
+            <button class="btn btn-outline-secondary btn-sm"
+                    disabled>
+                Siguiente
+            </button>
+        }
+    </div>
+</div>

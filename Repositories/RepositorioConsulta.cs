@@ -1,3 +1,4 @@
+
 using Microsoft.EntityFrameworkCore;
 using System.Data;
 using Veterinaria.Data;
@@ -21,9 +22,34 @@ namespace Veterinaria.Repositories
                 .Include(c => c.Mascota)
                 .Include(c => c.Usuario)
                 .Include(c => c.Veterinario)
-                .ThenInclude(v => v!.Usuario)
+                    .ThenInclude(v => v!.Usuario)
                 .OrderByDescending(c => c.FechaHora)
                 .ToList();
+        }
+
+        // Paginación desde MySQL
+        public (IEnumerable<Consulta> Consultas, int Total)
+            ObtenerPaginadas(int pagina, int cantidadPorPagina)
+        {
+            pagina = Math.Max(1, pagina);
+            cantidadPorPagina = Math.Clamp(cantidadPorPagina, 1, 100);
+
+            var consulta = _context.Consultas.AsNoTracking();
+
+            int total = consulta.Count();
+
+            var registros = consulta
+                .OrderByDescending(c => c.FechaHora)
+                .ThenByDescending(c => c.IdConsulta)
+                .Skip((pagina - 1) * cantidadPorPagina)
+                .Take(cantidadPorPagina)
+                .Include(c => c.Mascota)
+                .Include(c => c.Usuario)
+                .Include(c => c.Veterinario)
+                    .ThenInclude(v => v!.Usuario)
+                .ToList();
+
+            return (registros, total);
         }
 
         public Consulta? ObtenerPorId(int id)
@@ -32,7 +58,7 @@ namespace Veterinaria.Repositories
                 .Include(c => c.Mascota)
                 .Include(c => c.Usuario)
                 .Include(c => c.Veterinario)
-                .ThenInclude(v => v!.Usuario)
+                    .ThenInclude(v => v!.Usuario)
                 .Include(c => c.HistoriasClinicas)
                 .FirstOrDefault(c => c.IdConsulta == id);
         }
@@ -66,15 +92,15 @@ namespace Veterinaria.Repositories
                 .Any(c => c.IdTurno == idTurno);
         }
 
-        // Guarda la atención y actualiza el turno
+        // Registrar atención y actualizar turno
         public bool RegistrarAtencion(Consulta consulta, int idTurno)
         {
             using var transaccion = _context.Database
                 .BeginTransaction(IsolationLevel.ReadCommitted);
 
             var turnosActualizados = _context.Turnos
-                .Where(t => t.IdTurno == idTurno
-                    && t.Estado == "Pendiente")
+                .Where(t => t.IdTurno == idTurno &&
+                            t.Estado == "Pendiente")
                 .Where(t => !_context.Consultas
                     .Any(c => c.IdTurno == t.IdTurno))
                 .Where(t => t.IdMascota == consulta.IdMascota)

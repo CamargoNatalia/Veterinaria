@@ -1,3 +1,4 @@
+
 using Veterinaria.Models;
 
 namespace Veterinaria.Interfaces
@@ -15,5 +16,9 @@ namespace Veterinaria.Interfaces
         void Editar(Raza raza);
 
         void Eliminar(int id);
+
+        // Paginación desde el servidor
+        (IEnumerable<Raza> Razas, int Total)
+            ObtenerPaginadas(int pagina, int cantidadPorPagina);
     }
 }

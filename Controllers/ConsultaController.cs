@@ -1,3 +1,4 @@
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -29,18 +30,68 @@ namespace Veterinaria.Controllers
             _context = context;
         }
 
-        // Listado de consultas y turnos pendientes
-        public IActionResult Index()
+        // LISTADO PAGINADO: CONSULTAS Y TURNOS PENDIENTES
+        public IActionResult Index(
+            int paginaConsultas = 1,
+            int paginaTurnos = 1)
         {
-            var consultas = _repositorioConsulta.ObtenerTodos();
+            const int porPagina = 3;
 
-            ViewBag.TurnosPendientes =
-                _repositorioTurno.ObtenerPendientes();
+            paginaConsultas = Math.Max(1, paginaConsultas);
+            paginaTurnos = Math.Max(1, paginaTurnos);
 
-            return View(consultas);
+            var resultadoConsultas = _repositorioConsulta
+                .ObtenerPaginadas(paginaConsultas, porPagina);
+
+            int totalPaginasConsultas = (int)Math.Ceiling(
+                (double)resultadoConsultas.Total / porPagina);
+
+            if (totalPaginasConsultas > 0 &&
+                paginaConsultas > totalPaginasConsultas)
+            {
+                paginaConsultas = totalPaginasConsultas;
+
+                resultadoConsultas = _repositorioConsulta
+                    .ObtenerPaginadas(paginaConsultas, porPagina);
+            }
+
+            var pendientes = _context.Turnos
+                .AsNoTracking()
+                .Where(t => t.Estado == "Pendiente")
+                .Where(t => !_context.Consultas
+                    .Any(c => c.IdTurno == t.IdTurno));
+
+            int totalPendientes = pendientes.Count();
+
+            int totalPaginasTurnos = (int)Math.Ceiling(
+                (double)totalPendientes / porPagina);
+
+            if (totalPaginasTurnos > 0 &&
+                paginaTurnos > totalPaginasTurnos)
+            {
+                paginaTurnos = totalPaginasTurnos;
+            }
+
+            ViewBag.TurnosPendientes = pendientes
+                .OrderBy(t => t.FechaHora)
+                .ThenBy(t => t.IdTurno)
+                .Skip((paginaTurnos - 1) * porPagina)
+                .Take(porPagina)
+                .Include(t => t.Mascota)
+                .ToList();
+
+            ViewBag.PaginaConsultas = paginaConsultas;
+            ViewBag.TotalPaginasConsultas = totalPaginasConsultas;
+            ViewBag.TotalConsultas = resultadoConsultas.Total;
+
+            ViewBag.PaginaTurnos = paginaTurnos;
+            ViewBag.TotalPaginasTurnos = totalPaginasTurnos;
+            ViewBag.TotalTurnosPendientes = totalPendientes;
+
+            return View(resultadoConsultas.Consultas);
         }
 
-        // Detalles de la consulta
+        // DETALLES DE CONSULTA
         public IActionResult Details(int id)
         {
             var consulta = _repositorioConsulta.ObtenerPorId(id);
@@ -51,7 +102,7 @@ namespace Veterinaria.Controllers
             return View(consulta);
         }
 
-        // Datos de mascota y propietario para el formulario
+        // DATOS DE MASCOTA Y PROPIETARIO PARA AJAX
         [HttpGet]
         public IActionResult ObtenerDatosMascota(int id)
         {
@@ -90,7 +141,7 @@ namespace Veterinaria.Controllers
             });
         }
 
-        // GET: Nueva consulta
+        // NUEVA CONSULTA - GET
         [HttpGet]
         public IActionResult Create(int? idTurno)
         {
@@ -99,7 +150,6 @@ namespace Veterinaria.Controllers
                 FechaHora = DateTime.Now
             };
 
-            // Si ingresa un veterinario, identificar su ficha
             if (User.IsInRole("Veterinario"))
             {
                 var veterinario = ObtenerVeterinarioActual();
@@ -115,7 +165,6 @@ namespace Veterinaria.Controllers
                 consulta.IdVeterinario = veterinario.IdVeterinario;
             }
 
-            // Consulta originada desde un turno
             if (idTurno.HasValue)
             {
                 var turno = _repositorioTurno
@@ -148,7 +197,7 @@ namespace Veterinaria.Controllers
             return View(consulta);
         }
 
-        // POST: Registrar consulta
+        // NUEVA CONSULTA - POST
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Create(
@@ -162,11 +211,9 @@ namespace Veterinaria.Controllers
             if (!int.TryParse(idClaim, out int idUsuario))
                 return Unauthorized();
 
-            // Usuario que registra la atención
             consulta.IdUsuario = idUsuario;
 
-            // Si es Veterinario, ignorar el IdVeterinario
-            // recibido del formulario y obtenerlo de la sesión
+            // El veterinario autenticado siempre es el responsable
             if (User.IsInRole("Veterinario"))
             {
                 var veterinario = ObtenerVeterinarioActual();
@@ -177,8 +224,6 @@ namespace Veterinaria.Controllers
                 consulta.IdVeterinario = veterinario.IdVeterinario;
             }
 
-            // Validar solamente los datos correspondientes
-            // al formulario
             ModelState.Remove(nameof(Consulta.IdUsuario));
             ModelState.Remove(nameof(Consulta.Usuario));
             ModelState.Remove(nameof(Consulta.Mascota));
@@ -187,11 +232,10 @@ namespace Veterinaria.Controllers
 
             if (User.IsInRole("Veterinario"))
             {
-                ModelState.Remove(
-                    nameof(Consulta.IdVeterinario));
+                ModelState.Remove(nameof(Consulta.IdVeterinario));
             }
 
-            // Verificar mascota
+            // Validar mascota
             if (_repositorioMascota.ObtenerPorId(
                     consulta.IdMascota) == null)
             {
@@ -200,7 +244,7 @@ namespace Veterinaria.Controllers
                     "Seleccione una mascota válida.");
             }
 
-            // Verificar veterinario responsable
+            // Validar veterinario responsable
             if (!consulta.IdVeterinario.HasValue ||
                 !_context.Veterinarios.Any(v =>
                     v.IdVeterinario ==
@@ -213,7 +257,7 @@ namespace Veterinaria.Controllers
                     "Seleccione un veterinario activo.");
             }
 
-            // Verificar turno asociado
+            // Validar turno asociado
             if (consulta.IdTurno.HasValue)
             {
                 var turno = _repositorioTurno
@@ -253,7 +297,6 @@ namespace Veterinaria.Controllers
 
                 if (consulta.IdTurno.HasValue)
                 {
-                    // Registra consulta y marca turno Atendido
                     guardado = _repositorioConsulta
                         .RegistrarAtencion(
                             consulta,
@@ -261,14 +304,12 @@ namespace Veterinaria.Controllers
                 }
                 else
                 {
-                    // Consulta directa sin turno
                     _repositorioConsulta.Crear(consulta);
                     guardado = true;
                 }
 
                 if (guardado)
                 {
-                    // Guardar y reservar próximo turno
                     if (accion == "reservarTurno")
                     {
                         TempData["Mensaje"] =
@@ -299,7 +340,7 @@ namespace Veterinaria.Controllers
             return View(consulta);
         }
 
-        // GET: Editar consulta
+        // EDITAR CONSULTA - GET
         [HttpGet]
         public IActionResult Edit(int id)
         {
@@ -308,8 +349,6 @@ namespace Veterinaria.Controllers
             if (consulta == null)
                 return NotFound();
 
-            // El veterinario solo puede editar
-            // sus propias consultas
             if (!PuedeEditarConsulta(consulta))
                 return Forbid();
 
@@ -320,7 +359,7 @@ namespace Veterinaria.Controllers
             return View(consulta);
         }
 
-        // POST: Editar consulta
+        // EDITAR CONSULTA - POST
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Edit(
@@ -339,7 +378,7 @@ namespace Veterinaria.Controllers
             if (!PuedeEditarConsulta(consulta))
                 return Forbid();
 
-            // Conservar los datos que no se editan
+            // Mantener usuario, turno y veterinario originales
             datos.IdUsuario = consulta.IdUsuario;
             datos.IdTurno = consulta.IdTurno;
             datos.IdVeterinario = consulta.IdVeterinario;
@@ -351,7 +390,6 @@ namespace Veterinaria.Controllers
             ModelState.Remove(nameof(Consulta.Veterinario));
             ModelState.Remove(nameof(Consulta.IdVeterinario));
 
-            // Validar mascota
             if (_repositorioMascota.ObtenerPorId(
                     datos.IdMascota) == null)
             {
@@ -360,7 +398,7 @@ namespace Veterinaria.Controllers
                     "Seleccione una mascota válida.");
             }
 
-            // Si tiene turno asociado, no cambiar mascota
+            // No permitir cambiar la mascota si tiene turno
             if (consulta.IdTurno.HasValue &&
                 consulta.IdMascota != datos.IdMascota)
             {
@@ -379,7 +417,6 @@ namespace Veterinaria.Controllers
                 consulta.Observaciones = datos.Observaciones;
                 consulta.IdMascota = datos.IdMascota;
 
-                // Conservar veterinario y usuario originales
                 _repositorioConsulta.Editar(consulta);
 
                 TempData["Mensaje"] =
@@ -397,7 +434,7 @@ namespace Veterinaria.Controllers
             return View(datos);
         }
 
-        // GET: Eliminar consulta
+        // ELIMINAR CONSULTA - GET
         [HttpGet]
         [Authorize(Roles = "Administrador")]
         public IActionResult Delete(int id)
@@ -410,7 +447,7 @@ namespace Veterinaria.Controllers
             return View(consulta);
         }
 
-        // POST: Eliminar consulta
+        // ELIMINAR CONSULTA - POST
         [HttpPost, ActionName("Delete")]
         [Authorize(Roles = "Administrador")]
         [ValidateAntiForgeryToken]
@@ -447,7 +484,7 @@ namespace Veterinaria.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // Obtener la ficha del veterinario autenticado
+        // VETERINARIO AUTENTICADO
         private Veterinario? ObtenerVeterinarioActual()
         {
             var idClaim = User.FindFirst(
@@ -464,7 +501,7 @@ namespace Veterinaria.Controllers
                     v.Usuario.Rol == "Veterinario");
         }
 
-        // Controlar quién puede editar una consulta
+        // CONTROL DE PERMISOS PARA EDITAR
         private bool PuedeEditarConsulta(Consulta consulta)
         {
             if (!User.IsInRole("Veterinario"))
@@ -477,18 +514,49 @@ namespace Veterinaria.Controllers
                        veterinario.IdVeterinario;
         }
 
-        // Listas para los formularios
+        // CARGAR DATOS PARA FORMULARIOS
+        // Sin cargar todas las mascotas en un select
         private void CargarListas(
             int? idMascota = null,
             int? idVeterinario = null)
         {
-            ViewBag.Mascotas = new SelectList(
-                _repositorioMascota.ObtenerTodos(),
-                "IdMascota",
-                "Nombre",
-                idMascota);
+            ViewBag.MascotaSeleccionada = "";
 
-            // Datos profesionales asociados a Usuario
+            if (idMascota.HasValue && idMascota.Value > 0)
+            {
+                var mascota = _context.Mascotas
+                    .AsNoTracking()
+                    .Where(m => m.IdMascota == idMascota.Value)
+                    .Select(m => new
+                    {
+                        m.Nombre,
+
+                        Propietario = m.Cliente != null
+                            ? m.Cliente.Nombre + " " +
+                              m.Cliente.Apellido
+                            : "Sin propietario",
+
+                        Especie = m.Especie != null
+                            ? m.Especie.Nombre
+                            : "Sin especie",
+
+                        Raza = m.Raza != null
+                            ? m.Raza.Nombre
+                            : "Sin raza"
+                    })
+                    .FirstOrDefault();
+
+                if (mascota != null)
+                {
+                    ViewBag.MascotaSeleccionada =
+                        $"{mascota.Nombre} - " +
+                        $"{mascota.Propietario} - " +
+                        $"{mascota.Especie} - " +
+                        $"{mascota.Raza}";
+                }
+            }
+
+            // Veterinarios disponibles
             var veterinarios = _context.Veterinarios
                 .AsNoTracking()
                 .Where(v =>

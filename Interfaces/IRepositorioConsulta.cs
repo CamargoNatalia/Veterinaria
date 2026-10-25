@@ -11,8 +11,11 @@ namespace Veterinaria.Interfaces
         void Editar(Consulta consulta);
         void Eliminar(int id);
 
-        // Integración con turnos
         bool ExisteConsultaParaTurno(int idTurno);
         bool RegistrarAtencion(Consulta consulta, int idTurno);
+
+        // Paginación
+        (IEnumerable<Consulta> Consultas, int Total)
+            ObtenerPaginadas(int pagina, int cantidadPorPagina);
     }
 }

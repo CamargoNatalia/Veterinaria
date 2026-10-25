@@ -1,3 +1,4 @@
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Veterinaria.Interfaces;
@@ -5,7 +6,6 @@ using Veterinaria.Models;
 
 namespace Veterinaria.Controllers
 {
-    // Solo Administrador y Empleado pueden gestionar especies
     [Authorize(Roles = "Administrador,Empleado")]
     public class EspecieController : Controller
     {
@@ -17,15 +17,42 @@ namespace Veterinaria.Controllers
             _repositorioEspecie = repositorioEspecie;
         }
 
-        // GET: Especie
-        public IActionResult Index()
+        // LISTADO PAGINADO
+        public IActionResult Index(int pagina = 1)
         {
-            var especies = _repositorioEspecie.ObtenerTodos();
+            const int cantidadPorPagina = 3;
 
-            return View(especies);
+            pagina = Math.Max(1, pagina);
+
+            var resultado = _repositorioEspecie.ObtenerPaginadas(
+                pagina, cantidadPorPagina);
+
+            int totalPaginas = (int)Math.Ceiling(
+                (double)resultado.Total / cantidadPorPagina);
+
+            if (totalPaginas > 0 && pagina > totalPaginas)
+            {
+                pagina = totalPaginas;
+
+                resultado = _repositorioEspecie.ObtenerPaginadas(
+                    pagina, cantidadPorPagina);
+            }
+
+            ViewBag.PaginaActual = pagina;
+            ViewBag.TotalPaginas = totalPaginas;
+            ViewBag.TotalRegistros = resultado.Total;
+
+            return View(resultado.Especies);
         }
 
-        // GET: Especie/Details/5
+        // CRUD VUE.JS - SE MANTIENE
+        [HttpGet]
+        public IActionResult Vue()
+        {
+            return View();
+        }
+
+        // DETALLES
         public IActionResult Details(int id)
         {
             var especie = _repositorioEspecie.ObtenerPorId(id);
@@ -36,14 +63,14 @@ namespace Veterinaria.Controllers
             return View(especie);
         }
 
-        // GET: Especie/Create
+        // CREAR - GET
         [HttpGet]
         public IActionResult Create()
         {
             return View();
         }
 
-        // POST: Especie/Create
+        // CREAR - POST
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Create(Especie especie)
@@ -61,7 +88,7 @@ namespace Veterinaria.Controllers
             return View(especie);
         }
 
-        // GET: Especie/Edit/5
+        // EDITAR - GET
         [HttpGet]
         public IActionResult Edit(int id)
         {
@@ -73,7 +100,7 @@ namespace Veterinaria.Controllers
             return View(especie);
         }
 
-        // POST: Especie/Edit/5
+        // EDITAR - POST
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Edit(int id, Especie especie)
@@ -94,7 +121,7 @@ namespace Veterinaria.Controllers
             return View(especie);
         }
 
-        // GET: Especie/Delete/5
+        // ELIMINAR - GET
         [HttpGet]
         public IActionResult Delete(int id)
         {
@@ -106,7 +133,7 @@ namespace Veterinaria.Controllers
             return View(especie);
         }
 
-        // POST: Especie/Delete/5
+        // ELIMINAR - POST
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public IActionResult DeleteConfirmed(int id)

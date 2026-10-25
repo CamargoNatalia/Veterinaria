@@ -1,5 +1,5 @@
-@model Veterinaria.Models.Consulta
 
+@model Veterinaria.Models.Consulta
 @using Veterinaria.Models
 
 @{
@@ -10,7 +10,6 @@
 }
 
 <h1>Nueva Consulta</h1>
-
 <hr />
 
 @if (tieneTurno)
@@ -19,7 +18,7 @@
         <h5>Atención desde un turno</h5>
 
         <p class="mb-1">
-            <strong>Turno N°:</strong> @Model.IdTurno
+            <strong>Turno N.º:</strong> @Model.IdTurno
         </p>
 
         @if (turno != null)
@@ -42,14 +41,14 @@ else
     </div>
 }
 
-<form asp-action="Create" method="post">
+<form asp-action="Create" method="post" id="formConsulta">
 
     @Html.AntiForgeryToken()
 
-    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+    <div asp-validation-summary="ModelOnly"
+         class="text-danger mb-3"></div>
 
     <input type="hidden" asp-for="IdTurno" />
-
     <span asp-validation-for="IdTurno" class="text-danger"></span>
 
     <!-- MASCOTA -->
@@ -62,35 +61,43 @@ else
         <div class="card-body">
 
             <div class="mb-3">
-                <label asp-for="IdMascota" class="form-label">
+                <label for="buscarMascota" class="form-label">
                     Seleccionar Mascota
                 </label>
 
-                @if (tieneTurno)
+                <input type="text"
+                       id="buscarMascota"
+                       class="form-control"
+                       value="@ViewBag.MascotaSeleccionada"
+                       placeholder="Buscar mascota o propietario..."
+                       autocomplete="off"
+                       readonly="@tieneTurno" />
+
+                <input type="hidden" asp-for="IdMascota" />
+
+                @if (!tieneTurno)
                 {
-                    <select asp-for="IdMascota" asp-items="ViewBag.Mascotas" class="form-select" disabled>
-                    </select>
+                    <div id="resultadosMascotas"
+                         class="list-group mt-1"></div>
 
-                    <input type="hidden" name="IdMascota" value="@Model.IdMascota" />
-
-                    <small class="text-muted">
-                        Mascota asociada al turno.
-                    </small>
+                    <div id="avisoMascota" class="form-text">
+                        Escribí al menos 2 caracteres y seleccioná una mascota.
+                    </div>
                 }
                 else
                 {
-                    <select asp-for="IdMascota" asp-items="ViewBag.Mascotas" class="form-select">
-
-                        <option value="">
-                            -- Seleccione una mascota --
-                        </option>
-                    </select>
+                    <div class="form-text">
+                        Mascota asociada al turno. No se puede cambiar.
+                    </div>
                 }
 
-                <span asp-validation-for="IdMascota" class="text-danger"></span>
+                <span asp-validation-for="IdMascota"
+                      class="text-danger"></span>
             </div>
 
-            <div id="fichaMascota" class="row g-3" style="display:none;">
+            <div id="fichaMascota"
+                 class="row g-3"
+                 style="display:none;">
 
                 <div class="col-md-4">
                     <strong>Nombre:</strong>
@@ -126,10 +133,11 @@ else
                     <strong>Observaciones:</strong>
                     <div id="mascotaObservaciones"></div>
                 </div>
-
             </div>
 
-            <div id="errorFicha" class="alert alert-warning mt-3" style="display:none;">
+            <div id="errorFicha"
+                 class="alert alert-warning mt-3"
+                 style="display:none;">
                 No se pudieron recuperar los datos de la mascota.
             </div>
 
@@ -138,14 +146,15 @@ else
 
     <!-- PROPIETARIO -->
 
-    <div class="card mb-4" id="fichaPropietario" style="display:none;">
+    <div class="card mb-4"
+         id="fichaPropietario"
+         style="display:none;">
 
         <div class="card-header">
             <h5 class="mb-0">Datos del propietario</h5>
         </div>
 
         <div class="card-body">
-
             <div class="row g-3">
 
                 <div class="col-md-6">
@@ -174,7 +183,6 @@ else
                 </div>
 
             </div>
-
         </div>
     </div>
 
@@ -189,39 +197,42 @@ else
 
             @if (User.IsInRole("Veterinario"))
             {
-                <!-- Veterinario autenticado -->
                 <div class="mb-3">
-                    <label class="form-label">
-                        Veterinario
-                    </label>
+                    <label class="form-label">Veterinario</label>
 
-                    <input type="text" class="form-control" value="@User.Identity?.Name" readonly />
+                    <input type="text"
+                           class="form-control"
+                           value="@User.Identity?.Name"
+                           readonly />
 
                     <div class="form-text">
-                        El profesional responsable se asigna
-                        automáticamente según la sesión iniciada.
+                        El profesional se asigna automáticamente
+                        según la sesión iniciada.
                     </div>
 
-                    <span asp-validation-for="IdVeterinario" class="text-danger"></span>
+                    <span asp-validation-for="IdVeterinario"
+                          class="text-danger"></span>
                 </div>
             }
             else
             {
-                <!-- Administrador y Empleado -->
                 <div class="mb-3">
-                    <label asp-for="IdVeterinario" class="form-label">
+                    <label asp-for="IdVeterinario"
+                           class="form-label">
                         Veterinario
                     </label>
 
-                    <select asp-for="IdVeterinario" asp-items="ViewBag.Veterinarios" class="form-select" required>
-
+                    <select asp-for="IdVeterinario"
+                            asp-items="ViewBag.Veterinarios"
+                            class="form-select"
+                            required>
                         <option value="">
                             -- Seleccione un veterinario --
                         </option>
-
                     </select>
 
-                    <span asp-validation-for="IdVeterinario" class="text-danger"></span>
+                    <span asp-validation-for="IdVeterinario"
+                          class="text-danger"></span>
                 </div>
             }
 
@@ -242,10 +253,13 @@ else
                     Fecha y Hora de Atención
                 </label>
 
-                <input asp-for="FechaHora" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}"
+                <input asp-for="FechaHora"
+                       type="datetime-local"
+                       asp-format="{0:yyyy-MM-ddTHH:mm}"
                        class="form-control" />
 
-                <span asp-validation-for="FechaHora" class="text-danger"></span>
+                <span asp-validation-for="FechaHora"
+                      class="text-danger"></span>
             </div>
 
             <div class="mb-3">
@@ -253,9 +267,13 @@ else
                     Motivo de Consulta
                 </label>
 
-                <textarea asp-for="Motivo" class="form-control" rows="3" maxlength="1000"></textarea>
+                <textarea asp-for="Motivo"
+                          class="form-control"
+                          rows="3"
+                          maxlength="1000"></textarea>
 
-                <span asp-validation-for="Motivo" class="text-danger"></span>
+                <span asp-validation-for="Motivo"
+                      class="text-danger"></span>
             </div>
 
             <div class="mb-3">
@@ -263,9 +281,13 @@ else
                     Diagnóstico
                 </label>
 
-                <textarea asp-for="Diagnostico" class="form-control" rows="3" maxlength="2000"></textarea>
+                <textarea asp-for="Diagnostico"
+                          class="form-control"
+                          rows="3"
+                          maxlength="2000"></textarea>
 
-                <span asp-validation-for="Diagnostico" class="text-danger"></span>
+                <span asp-validation-for="Diagnostico"
+                      class="text-danger"></span>
             </div>
 
             <div class="mb-3">
@@ -273,9 +295,13 @@ else
                     Tratamiento
                 </label>
 
-                <textarea asp-for="Tratamiento" class="form-control" rows="3" maxlength="2000"></textarea>
+                <textarea asp-for="Tratamiento"
+                          class="form-control"
+                          rows="3"
+                          maxlength="2000"></textarea>
 
-                <span asp-validation-for="Tratamiento" class="text-danger"></span>
+                <span asp-validation-for="Tratamiento"
+                      class="text-danger"></span>
             </div>
 
             <div class="mb-3">
@@ -283,11 +309,14 @@ else
                     Observaciones
                 </label>
 
-                <textarea asp-for="Observaciones" class="form-control" rows="3" maxlength="2000"></textarea>
+                <textarea asp-for="Observaciones"
+                          class="form-control"
+                          rows="3"
+                          maxlength="2000"></textarea>
 
-                <span asp-validation-for="Observaciones" class="text-danger"></span>
+                <span asp-validation-for="Observaciones"
+                      class="text-danger"></span>
             </div>
-
         </div>
     </div>
 
@@ -295,51 +324,51 @@ else
 
     <div class="mb-4 d-flex gap-2 flex-wrap">
 
-        <button type="submit" name="accion" value="guardar" class="btn btn-primary">
+        <button type="submit"
+                name="accion"
+                value="guardar"
+                class="btn btn-primary">
             Guardar Consulta
         </button>
 
-        <button type="submit" name="accion" value="reservarTurno" class="btn btn-success">
+        <button type="submit"
+                name="accion"
+                value="reservarTurno"
+                class="btn btn-success">
             Guardar Consulta y Reservar Próximo Turno
         </button>
 
         <a asp-action="Index" class="btn btn-secondary">
             Volver
         </a>
-
     </div>
 
 </form>
 
 @section Scripts {
-
     <partial name="_ValidationScriptsPartial" />
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
 
-            const selector =
-                document.getElementById("IdMascota");
+            const buscador = document.getElementById("buscarMascota");
+            const selector = document.getElementById("IdMascota");
+            const resultados = document.getElementById("resultadosMascotas");
+            const aviso = document.getElementById("avisoMascota");
+            const fichaMascota = document.getElementById("fichaMascota");
+            const fichaPropietario = document.getElementById("fichaPropietario");
+            const errorFicha = document.getElementById("errorFicha");
 
-            const fichaMascota =
-                document.getElementById("fichaMascota");
+            const urlBuscar = '@Url.Action("BuscarMascotas", "Turno")';
+            const urlDatos = '@Url.Action("ObtenerDatosMascota", "Consulta")';
 
-            const fichaPropietario =
-                document.getElementById("fichaPropietario");
-
-            const errorFicha =
-                document.getElementById("errorFicha");
-
-            const urlBase =
-                '@Url.Action("ObtenerDatosMascota", "Consulta")';
-
+            let temporizador;
             let solicitudActual = 0;
+            let solicitudFicha = 0;
 
             function mostrar(id, valor) {
                 document.getElementById(id).textContent =
-                    valor === null ||
-                        valor === undefined ||
-                        valor === ""
+                    valor === null || valor === undefined || valor === ""
                         ? "No registrado"
                         : valor;
             }
@@ -350,10 +379,9 @@ else
                 errorFicha.style.display = "none";
             }
 
-            async function cargarMascota() {
-
+            async function cargarFicha() {
                 const id = selector.value;
-                const numeroSolicitud = ++solicitudActual;
+                const numeroSolicitud = ++solicitudFicha;
 
                 ocultarFichas();
 
@@ -362,21 +390,16 @@ else
 
                 try {
                     const respuesta = await fetch(
-                        urlBase + "?id=" +
-                        encodeURIComponent(id),
-                        {
-                            headers: {
-                                "Accept": "application/json"
-                            }
-                        }
+                        urlDatos + "?id=" + encodeURIComponent(id),
+                        { credentials: "same-origin" }
                     );
 
                     if (!respuesta.ok)
-                        throw new Error("Error al consultar mascota");
+                        throw new Error("Error");
 
                     const mascota = await respuesta.json();
 
-                    if (numeroSolicitud !== solicitudActual)
+                    if (numeroSolicitud !== solicitudFicha)
                         return;
 
                     mostrar("mascotaNombre", mascota.nombre);
@@ -395,8 +418,7 @@ else
 
                     mostrar(
                         "mascotaPeso",
-                        mascota.peso !== null &&
-                            mascota.peso !== undefined
+                        mascota.peso != null
                             ? mascota.peso + " kg"
                             : null
                     );
@@ -409,27 +431,22 @@ else
                     fichaMascota.style.display = "";
 
                     if (mascota.propietario) {
-
                         mostrar(
                             "propietarioNombre",
                             mascota.propietario.nombreCompleto
                         );
-
                         mostrar(
                             "propietarioDni",
                             mascota.propietario.dni
                         );
-
                         mostrar(
                             "propietarioTelefono",
                             mascota.propietario.telefono
                         );
-
                         mostrar(
                             "propietarioCorreo",
                             mascota.propietario.correo
                         );
-
                         mostrar(
                             "propietarioDireccion",
                             mascota.propietario.direccion
@@ -439,20 +456,118 @@ else
                     }
 
                 } catch (error) {
-
-                    if (numeroSolicitud === solicitudActual)
+                    if (numeroSolicitud === solicitudFicha)
                         errorFicha.style.display = "";
                 }
             }
 
-            selector.addEventListener(
-                "change",
-                cargarMascota
-            );
+            if (!buscador.readOnly) {
+                buscador.addEventListener("input", function () {
 
-            if (selector.value &&
-                Number(selector.value) > 0) {
-                cargarMascota();
+                    const texto = buscador.value.trim();
+                    const numeroSolicitud = ++solicitudActual;
+
+                    clearTimeout(temporizador);
+                    selector.value = "";
+                    resultados.replaceChildren();
+                    ocultarFichas();
+                    ++solicitudFicha;
+
+                    if (texto.length < 2) {
+                        aviso.textContent = "Escribí al menos 2 caracteres.";
+                        return;
+                    }
+
+                    aviso.textContent = "Buscando mascotas...";
+
+                    temporizador = setTimeout(async function () {
+                        try {
+                            const respuesta = await fetch(
+                                urlBuscar + "?termino=" +
+                                encodeURIComponent(texto),
+                                { credentials: "same-origin" }
+                            );
+
+                            if (!respuesta.ok)
+                                throw new Error("Error");
+
+                            const mascotas = await respuesta.json();
+
+                            if (numeroSolicitud !== solicitudActual)
+                                return;
+
+                            resultados.replaceChildren();
+
+                            if (mascotas.length === 0) {
+                                aviso.textContent =
+                                    "No se encontraron mascotas activas.";
+                                return;
+                            }
+
+                            aviso.textContent =
+                                "Elegí una mascota de la lista.";
+
+                            mascotas.forEach(function (mascota) {
+                                const descripcion =
+                                    mascota.nombre + " - " +
+                                    mascota.propietario + " - " +
+                                    mascota.especie + " - " +
+                                    mascota.raza;
+
+                                const boton =
+                                    document.createElement("button");
+
+                                boton.type = "button";
+                                boton.className =
+                                    "list-group-item list-group-item-action";
+                                boton.textContent = descripcion;
+
+                                boton.addEventListener("click", function () {
+                                    ++solicitudActual;
+                                    clearTimeout(temporizador);
+
+                                    selector.value = mascota.idMascota;
+                                    buscador.value = descripcion;
+                                    resultados.replaceChildren();
+
+                                    aviso.textContent =
+                                        "Mascota seleccionada correctamente.";
+
+                                    cargarFicha();
+                                });
+
+                                resultados.appendChild(boton);
+                            });
+
+                        } catch (error) {
+                            if (numeroSolicitud === solicitudActual) {
+                                resultados.replaceChildren();
+                                aviso.textContent =
+                                    "No se pudo realizar la búsqueda.";
+                            }
+                        }
+                    }, 300);
+                });
+            }
+
+            document.getElementById("formConsulta")
+                .addEventListener("submit", function (e) {
+                    if (!selector.value ||
+                        Number(selector.value) <= 0) {
+                        e.preventDefault();
+
+                        if (aviso) {
+                            aviso.textContent =
+                                "Tenés que seleccionar una mascota.";
+                        }
+
+                        buscador.focus();
+                    }
+                });
+
+            // Cargar ficha cuando la consulta proviene de un turno
+            if (selector.value && Number(selector.value) > 0) {
+                cargarFicha();
             }
         });
     </script>

@@ -1,3 +1,4 @@
+
 @model Veterinaria.Models.Mascota
 
 @{
@@ -5,7 +6,6 @@
 }
 
 <h1>Nueva Mascota</h1>
-
 <hr />
 
 <div class="row">
@@ -13,150 +13,128 @@
 
         <form asp-action="Create" method="post">
 
-            <div asp-validation-summary="ModelOnly" class="text-danger">
-            </div>
+            @Html.AntiForgeryToken()
 
+            <div asp-validation-summary="ModelOnly"
+                 class="text-danger"></div>
 
             <div class="mb-3">
-
-                <label asp-for="Nombre" class="form-label">
-                </label>
-
+                <label asp-for="Nombre" class="form-label"></label>
                 <input asp-for="Nombre" class="form-control" />
-
-                <span asp-validation-for="Nombre" class="text-danger">
-                </span>
-
+                <span asp-validation-for="Nombre"
+                      class="text-danger"></span>
             </div>
 
-
+            <!-- CLIENTE CON BÚSQUEDA AJAX -->
             <div class="mb-3">
-
-                <label asp-for="IdCliente" class="form-label">
+                <label for="buscarCliente" class="form-label">
                     Cliente
                 </label>
 
-                <select asp-for="IdCliente" asp-items="ViewBag.Clientes" class="form-select">
+                <input id="buscarCliente"
+                       type="text"
+                       class="form-control"
+                       placeholder="Buscar por nombre, apellido o DNI..."
+                       autocomplete="off"
+                       value="@ViewBag.ClienteSeleccionado" />
 
-                    <option value="">
-                        -- Seleccione un cliente --
-                    </option>
+                <input asp-for="IdCliente" type="hidden" />
 
-                </select>
+                <div id="resultadosClientes"
+                     class="list-group mt-1"></div>
 
-                <span asp-validation-for="IdCliente" class="text-danger">
-                </span>
+                <div id="clienteElegido"
+                     class="form-text">
+                    Escribí al menos 2 caracteres y seleccioná un cliente.
+                </div>
 
+                <span asp-validation-for="IdCliente"
+                      class="text-danger"></span>
             </div>
 
-
             <div class="mb-3">
-
                 <label asp-for="IdEspecie" class="form-label">
                     Especie
                 </label>
 
-                <select asp-for="IdEspecie" asp-items="ViewBag.Especies" class="form-select" id="IdEspecie">
-
-                    <option value="">
-                        -- Seleccione una especie --
-                    </option>
-
+                <select asp-for="IdEspecie"
+                        asp-items="ViewBag.Especies"
+                        class="form-select"
+                        id="IdEspecie">
+                    <option value="">-- Seleccione una especie --</option>
                 </select>
 
-                <span asp-validation-for="IdEspecie" class="text-danger">
-                </span>
-
+                <span asp-validation-for="IdEspecie"
+                      class="text-danger"></span>
             </div>
 
             <div class="mb-3">
-
                 <label asp-for="IdRaza" class="form-label">
                     Raza
                 </label>
 
-                <select asp-for="IdRaza" asp-items="ViewBag.Razas" class="form-select" id="IdRaza">
-
-                    <option value="">
-                        -- Seleccione una raza --
-                    </option>
-
+                <select asp-for="IdRaza"
+                        asp-items="ViewBag.Razas"
+                        class="form-select"
+                        id="IdRaza">
+                    <option value="">-- Seleccione una raza --</option>
                 </select>
 
-                <span asp-validation-for="IdRaza" class="text-danger">
-                </span>
-
+                <span asp-validation-for="IdRaza"
+                      class="text-danger"></span>
             </div>
 
-
-
             <div class="mb-3">
-
-                <label asp-for="FechaNacimiento" class="form-label">
+                <label asp-for="FechaNacimiento"
+                       class="form-label">
                     Fecha de nacimiento
                 </label>
 
-                <input asp-for="FechaNacimiento" type="date" class="form-control" />
+                <input asp-for="FechaNacimiento"
+                       type="date"
+                       class="form-control" />
 
-                <span asp-validation-for="FechaNacimiento" class="text-danger">
-                </span>
-
+                <span asp-validation-for="FechaNacimiento"
+                      class="text-danger"></span>
             </div>
 
             <div class="mb-3">
-
-                <label asp-for="Sexo" class="form-label">
-                </label>
+                <label asp-for="Sexo" class="form-label"></label>
 
                 <select asp-for="Sexo" class="form-select">
-
-                    <option value="">
-                        -- Seleccione --
-                    </option>
-
-                    <option value="Macho">
-                        Macho
-                    </option>
-
-                    <option value="Hembra">
-                        Hembra
-                    </option>
-
+                    <option value="">-- Seleccione --</option>
+                    <option value="Macho">Macho</option>
+                    <option value="Hembra">Hembra</option>
                 </select>
 
-                <span asp-validation-for="Sexo" class="text-danger">
-                </span>
-
-            </div>
-
-
-            <div class="mb-3">
-
-                <label asp-for="Peso" class="form-label">
-                    Peso
-                </label>
-
-                <input asp-for="Peso" type="number" step="0.01" min="0.01" class="form-control" />
-
-                <span asp-validation-for="Peso" class="text-danger">
-                </span>
-
+                <span asp-validation-for="Sexo"
+                      class="text-danger"></span>
             </div>
 
             <div class="mb-3">
+                <label asp-for="Peso" class="form-label"></label>
 
-                <label asp-for="Observaciones" class="form-label">
-                </label>
+                <input asp-for="Peso"
+                       type="number"
+                       step="0.01"
+                       min="0.01"
+                       class="form-control" />
 
-                <textarea asp-for="Observaciones" class="form-control" rows="4">
-                </textarea>
-
-                <span asp-validation-for="Observaciones" class="text-danger">
-                </span>
-
+                <span asp-validation-for="Peso"
+                      class="text-danger"></span>
             </div>
 
+            <div class="mb-3">
+                <label asp-for="Observaciones"
+                       class="form-label"></label>
 
+                <textarea asp-for="Observaciones"
+                          class="form-control"
+                          rows="4"></textarea>
+
+                <span asp-validation-for="Observaciones"
+                      class="text-danger"></span>
+            </div>
 
             <button type="submit" class="btn btn-primary">
                 Guardar
@@ -167,92 +145,157 @@
             </a>
 
         </form>
-
     </div>
 </div>
 
-
-@section Scripts
-{
+@section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
 
-
     <script>
+        document.addEventListener("DOMContentLoaded", function () {
 
-        $(document).ready(function () {
+            const buscador = document.getElementById("buscarCliente");
+            const idCliente = document.getElementById("IdCliente");
+            const resultados = document.getElementById("resultadosClientes");
+            const aviso = document.getElementById("clienteElegido");
 
+            let temporizador;
+            let solicitudActual = 0;
 
-            $("#IdEspecie").change(function () {
+            buscador.addEventListener("input", function () {
+                const texto = buscador.value.trim();
+                const numeroSolicitud = ++solicitudActual;
 
-                var idEspecie = $(this).val();
+                clearTimeout(temporizador);
+                idCliente.value = "";
+                resultados.replaceChildren();
 
+                aviso.textContent =
+                    "Seleccioná un cliente de los resultados.";
 
-                var razaSelect = $("#IdRaza");
-
-
-                razaSelect.empty();
-
-
-                razaSelect.append(
-                    '<option value="">-- Seleccione una raza --</option>'
-                );
-
-
-                if (idEspecie) {
-
-
-                    $.ajax({
-
-                        url: '@Url.Action("ObtenerRazasPorEspecie", "Mascota")',
-
-
-                        // GET porque solamente consultamos datos
-                        type: 'GET',
-
-
-                        data: {
-                            idEspecie: idEspecie
-                        },
-
-                        success: function (razas) {
-
-
-                            $.each(razas, function (i, raza) {
-
-
-                                razaSelect.append(
-
-                                    $('<option>', {
-
-                                        value: raza.idRaza,
-
-                                        text: raza.nombre
-
-                                    })
-
-                                );
-
-                            });
-
-                        },
-
-                        error: function () {
-
-                            alert(
-                                "No se pudieron cargar las razas."
-                            );
-
-                        }
-
-                    });
-
+                if (texto.length < 2) {
+                    aviso.textContent =
+                        "Escribí al menos 2 caracteres.";
+                    return;
                 }
 
+                temporizador = setTimeout(async function () {
+                    try {
+                        const url = '@Url.Action("BuscarClientes", "Mascota")'
+                            + "?termino=" + encodeURIComponent(texto);
+
+                        const respuesta = await fetch(url);
+
+                        if (!respuesta.ok)
+                            throw new Error("Error de búsqueda");
+
+                        const clientes = await respuesta.json();
+
+                        if (numeroSolicitud !== solicitudActual)
+                            return;
+
+                        resultados.replaceChildren();
+
+                        if (clientes.length === 0) {
+                            aviso.textContent =
+                                "No se encontraron clientes activos.";
+                            return;
+                        }
+
+                        aviso.textContent =
+                            "Elegí un cliente de la lista.";
+
+                        clientes.forEach(function (cliente) {
+
+                            const boton =
+                                document.createElement("button");
+
+                            boton.type = "button";
+                            boton.className =
+                                "list-group-item list-group-item-action";
+
+                            const descripcion = cliente.nombre +
+                                (cliente.dni
+                                    ? " - DNI: " + cliente.dni
+                                    : "");
+
+                            boton.textContent = descripcion;
+
+                            boton.addEventListener("click", function () {
+                                ++solicitudActual;
+                                clearTimeout(temporizador);
+
+                                idCliente.value = cliente.idCliente;
+                                buscador.value = descripcion;
+                                resultados.replaceChildren();
+
+                                aviso.textContent =
+                                    "Cliente seleccionado correctamente.";
+                            });
+
+                            resultados.appendChild(boton);
+                        });
+
+                    } catch (error) {
+                        if (numeroSolicitud === solicitudActual) {
+                            resultados.replaceChildren();
+                            aviso.textContent =
+                                "No se pudo realizar la búsqueda.";
+                        }
+                    }
+                }, 300);
             });
 
-        });
+            // Razas dependientes de especie mediante AJAX
+            const especie = document.getElementById("IdEspecie");
+            const raza = document.getElementById("IdRaza");
 
+            especie.addEventListener("change", async function () {
+                raza.replaceChildren();
+
+                const opcion = new Option(
+                    "-- Seleccione una raza --", "");
+                raza.add(opcion);
+
+                if (!especie.value)
+                    return;
+
+                try {
+                    const url =
+                        '@Url.Action("ObtenerRazasPorEspecie", "Mascota")'
+                        + "?idEspecie="
+                        + encodeURIComponent(especie.value);
+
+                    const respuesta = await fetch(url);
+
+                    if (!respuesta.ok)
+                        throw new Error("Error");
+
+                    const razas = await respuesta.json();
+
+                    razas.forEach(function (item) {
+                        raza.add(new Option(
+                            item.nombre, item.idRaza));
+                    });
+
+                } catch (error) {
+                    alert("No se pudieron cargar las razas.");
+                }
+            });
+
+            // Evitar enviar un cliente que no fue seleccionado
+            document.querySelector("form")
+                .addEventListener("submit", function (e) {
+                    if (!idCliente.value ||
+                        Number(idCliente.value) <= 0) {
+                        e.preventDefault();
+                        aviso.textContent =
+                            "Tenés que seleccionar un cliente de la lista.";
+                        buscador.focus();
+                    }
+                });
+        });
     </script>
 }

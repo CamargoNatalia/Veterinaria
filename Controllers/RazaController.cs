@@ -1,3 +1,4 @@
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -7,7 +8,6 @@ using Veterinaria.Models;
 
 namespace Veterinaria.Controllers
 {
-    // Solo Administrador y Empleado pueden gestionar razas
     [Authorize(Roles = "Administrador,Empleado")]
     public class RazaController : Controller
     {
@@ -22,15 +22,35 @@ namespace Veterinaria.Controllers
             _context = context;
         }
 
-        // GET: Raza
-        public IActionResult Index()
+        // LISTADO PAGINADO
+        public IActionResult Index(int pagina = 1)
         {
-            var razas = _repositorioRaza.ObtenerTodos();
+            const int cantidadPorPagina = 3;
 
-            return View(razas);
+            pagina = Math.Max(1, pagina);
+
+            var resultado = _repositorioRaza.ObtenerPaginadas(
+                pagina, cantidadPorPagina);
+
+            int totalPaginas = (int)Math.Ceiling(
+                (double)resultado.Total / cantidadPorPagina);
+
+            if (totalPaginas > 0 && pagina > totalPaginas)
+            {
+                pagina = totalPaginas;
+
+                resultado = _repositorioRaza.ObtenerPaginadas(
+                    pagina, cantidadPorPagina);
+            }
+
+            ViewBag.PaginaActual = pagina;
+            ViewBag.TotalPaginas = totalPaginas;
+            ViewBag.TotalRegistros = resultado.Total;
+
+            return View(resultado.Razas);
         }
 
-        // GET: Raza/Details/5
+        // DETALLES
         public IActionResult Details(int id)
         {
             var raza = _repositorioRaza.ObtenerPorId(id);
@@ -41,16 +61,15 @@ namespace Veterinaria.Controllers
             return View(raza);
         }
 
-        // GET: Raza/Create
+        // CREAR - GET
         [HttpGet]
         public IActionResult Create()
         {
             CargarEspecies();
-
             return View();
         }
 
-        // POST: Raza/Create
+        // CREAR - POST
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Create(Raza raza)
@@ -66,11 +85,10 @@ namespace Veterinaria.Controllers
             }
 
             CargarEspecies(raza);
-
             return View(raza);
         }
 
-        // GET: Raza/Edit/5
+        // EDITAR - GET
         [HttpGet]
         public IActionResult Edit(int id)
         {
@@ -80,11 +98,10 @@ namespace Veterinaria.Controllers
                 return NotFound();
 
             CargarEspecies(raza);
-
             return View(raza);
         }
 
-        // POST: Raza/Edit/5
+        // EDITAR - POST
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Edit(int id, Raza raza)
@@ -103,11 +120,10 @@ namespace Veterinaria.Controllers
             }
 
             CargarEspecies(raza);
-
             return View(raza);
         }
 
-        // GET: Raza/Delete/5
+        // ELIMINAR - GET
         [HttpGet]
         public IActionResult Delete(int id)
         {
@@ -119,7 +135,7 @@ namespace Veterinaria.Controllers
             return View(raza);
         }
 
-        // POST: Raza/Delete/5
+        // ELIMINAR - POST
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public IActionResult DeleteConfirmed(int id)
@@ -132,7 +148,7 @@ namespace Veterinaria.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // Cargar especies activas en el formulario
+        // CARGAR ESPECIES ACTIVAS
         private void CargarEspecies(Raza? raza = null)
         {
             ViewBag.Especies = new SelectList(
