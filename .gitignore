@@ -484,3 +484,18 @@ $RECYCLE.BIN/
 # Archivos privados de Historia Clinica
 # No subir documentos clinicos al repositorio Git
 /ArchivosClinicos/
+
+
+# Configuracion local y secretos
+appsettings.Local.json
+appsettings.*.Local.json
+secrets.json
+
+# Certificados y claves privadas
+*.pfx
+*.p12
+*.key
+
+# Archivos de respaldo de bases de datos
+*.bak
+*.dump

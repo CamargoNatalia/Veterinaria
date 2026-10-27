@@ -187,6 +187,7 @@ namespace Veterinaria.Controllers
                 new { id = idConsulta });
         }
 
+
         // Visualizar PDF o imagen en el navegador
         [HttpGet]
         public IActionResult Ver(int id)
@@ -196,6 +197,11 @@ namespace Veterinaria.Controllers
 
             if (historiaClinica == null)
                 return NotFound();
+
+            // Verificar que el usuario tenga acceso a la consulta.
+            if (historiaClinica.Consulta == null ||
+                !PuedeAdjuntar(historiaClinica.Consulta))
+                return Forbid();
 
             string? ruta = ObtenerRutaArchivo(
                 historiaClinica.CarpetaDescarga);
@@ -222,6 +228,7 @@ namespace Veterinaria.Controllers
             return File(stream, tipoContenido);
         }
 
+
         // Descargar documento clínico
         [HttpGet]
         public IActionResult Descargar(int id)
@@ -231,6 +238,11 @@ namespace Veterinaria.Controllers
 
             if (historiaClinica == null)
                 return NotFound();
+
+            // Verificar que el usuario tenga acceso a la consulta.
+            if (historiaClinica.Consulta == null ||
+                !PuedeAdjuntar(historiaClinica.Consulta))
+                return Forbid();
 
             string? ruta = ObtenerRutaArchivo(
                 historiaClinica.CarpetaDescarga);
